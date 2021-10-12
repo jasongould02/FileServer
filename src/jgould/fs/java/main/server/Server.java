@@ -1,14 +1,14 @@
 package jgould.fs.java.main.server;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
-public class Server {
+import jgould.fs.java.main.FileServerConstants;
 
+public class Server {
 	
 	private ServerSocket server;
 	private int port;
@@ -18,6 +18,10 @@ public class Server {
 	
 	public static void main(String[] args) {
 		try {
+			File f = new File("trash");
+			f.mkdir();
+			FileServerConstants.setTrashBin("trash/");
+			
 			Server s = new Server(80);
 		} catch (IOException e) {
 			e.printStackTrace();
