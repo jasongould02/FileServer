@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 
-import javafx.scene.shape.Path;
 import jgould.fs.java.main.FileServerConstants;
 
 public class Workspace {
@@ -59,7 +58,7 @@ public class Workspace {
 	 * @return
 	 * @throws IOException
 	 */
-	public File deleteFile(String filename) throws IOException { // TODO: update wsFiles for change in the workspace
+	public File deleteFile(String filename, StandardCopyOption copyOption) throws IOException, Exception { 
 		File temp = null;
 		for(File f : wsFiles) {
 			if(f.getName().equals(filename) && f.exists()) {
@@ -68,27 +67,39 @@ public class Workspace {
 		}
 		if(temp != null) {
 			wsFiles.remove(temp);
-			Files.move(temp.toPath(), FileServerConstants.getTrashBin().toPath(), StandardCopyOption.REPLACE_EXISTING); // TODO: replace with prompt asking user for copy option
+			Files.move(temp.toPath(), FileServerConstants.getTrashBin().toPath(), copyOption); // TODO: prompt users via GUI button press for the copy option
 			temp.delete();
 		}
+		refreshWorkspace();
 		return temp;
 	}
 	
-	public File moveFile(String filename, String destination) throws IOException { // TODO: update wsFiles for change in the workspace
+	/**
+	 * Moves a file from the given filename and moves the file to the destination path.
+	 * The destination must be a directory and not a file. 
+	 * 
+	 * @param filename
+	 * @param destination
+	 * @param copyOption
+	 * @return
+	 * @throws IOException
+	 * @throws Exception
+	 */
+	public File moveFile(String filename, String destination, StandardCopyOption copyOption) throws IOException, Exception { 
 		if(!destination.endsWith("/")) {
 			destination += "/";
 		}
 		File temp = new File(filename);
 		File dest = new File(destination);
 		
-		if(!dest.isDirectory()) {
+		if(!dest.isDirectory() || !dest.exists()) {
 			dest.mkdir();
 		}
 		
-		
 		if(temp.exists()) {
-			Files.move(temp.toPath(), new File(destination + temp.getName()).toPath(), StandardCopyOption.REPLACE_EXISTING); // TODO: replace with prompt asking user for copy option
+			Files.move(temp.toPath(), new File(destination + temp.getName()).toPath(), copyOption); // TODO: prompt users via GUI button press for the copy option
 		}
+		refreshWorkspace();
 		return temp;
 	}
 	
