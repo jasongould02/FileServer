@@ -2,6 +2,10 @@
 .settings/
 bin/
 
+workspace/
+*.png
+
+
 .classpath
 .project
 debug.txt
