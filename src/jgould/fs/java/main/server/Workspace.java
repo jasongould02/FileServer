@@ -14,20 +14,6 @@ public class Workspace {
 	private ArrayList<File> wsFiles = null; // instead of using File#listFiles()
 											// Probably will convert back to File#listFiles() instead  
 	
-/*	public static void main(String[] args) {
-		Workspace w = new Workspace();
-		File f = new File("trash");
-		f.mkdir();
-		FileServerConstants.setTrashBin("trash/");
-		
-		try {
-			w.moveFile("image.png", "testfolder");
-			//w.deleteFile(filename);;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}*/
-	
 	public Workspace() {
 		wsFiles = new ArrayList<File>();
 	}
@@ -46,6 +32,11 @@ public class Workspace {
 	public File setWorkspace(String dir) throws Exception {
 		this.ws = new File(dir);
 		if(ws.isDirectory()) {
+			// System.out.println(getAbsolutePath());
+			return ws;
+		} else if(!ws.exists() || ws.isFile()){
+			ws.mkdirs();
+			//System.out.println(getAbsolutePath());
 			return ws;
 		} else {
 			throw new Exception("Given string is not a directory.");
@@ -55,61 +46,86 @@ public class Workspace {
 	/**
 	 * Removes file from the directory and transfers the content to a trash bin the path to which is set in {@link FileServerConstants#setTrashBin(String)}
 	 * @param filename
-	 * @return
+	 * @return File object of the deleted File
 	 * @throws IOException
 	 */
-	public File deleteFile(String filename, StandardCopyOption copyOption) throws IOException, Exception { 
-		File temp = null;
-		for(File f : wsFiles) {
-			if(f.getName().equals(filename) && f.exists()) {
-				temp = f;
-			}
-		}
-		if(temp != null) {
-			wsFiles.remove(temp);
-			Files.move(temp.toPath(), FileServerConstants.getTrashBin().toPath(), copyOption); // TODO: prompt users via GUI button press for the copy option
-			temp.delete();
+	public File deleteFile(String source, StandardCopyOption copyOption) throws IOException, Exception { 
+		checkWorkspace();
+		
+		File sourceFile = new File(getAbsolutePath() + source);
+		
+		// DEBUG
+		//System.out.println("Does " + sourceFile.getCanonicalPath() + " exists: " + sourceFile.exists() + " (" + sourceFile.getAbsolutePath() + ")");
+		
+		if(sourceFile.exists()) {
+			Files.move(sourceFile.toPath(), FileServerConstants.getTrashBin().toPath(), copyOption);
+			sourceFile.delete();
 		}
 		refreshWorkspace();
-		return temp;
+		if(sourceFile.exists()) {
+			throw new IOException("Failed to delete:" + sourceFile.getAbsolutePath());
+		}
+		
+		return sourceFile;
 	}
 	
 	/**
-	 * Moves a file from the given filename and moves the file to the destination path.
-	 * The destination must be a directory and not a file. 
+	 * Moves a file from the given path and moves the file to the destination path.
+	 * The destination must be a directory and not a file. The path to the 'source' should be relative to the workspace path
+	 * e.g. if the workspace is '...\fileserver\workspace\' then a source file can be 'tempfolder\file.txt'
+	 * The path of the source file would technically be '...\fileserver\workspace\tempfolder\file.txt'
 	 * 
-	 * @param filename
+	 * @param path
 	 * @param destination
 	 * @param copyOption
 	 * @return
 	 * @throws IOException
 	 * @throws Exception
 	 */
-	public File moveFile(String filename, String destination, StandardCopyOption copyOption) throws IOException, Exception { 
-		if(!destination.endsWith("/")) {
-			destination += "/";
+	public File moveFile(String source, String destination, StandardCopyOption copyOption) throws IOException, Exception { 
+		checkWorkspace();
+		
+		if(!destination.endsWith("\\")) {
+			destination += "\\";
 		}
-		File temp = new File(filename);
-		File dest = new File(destination);
+		File temp = new File(getAbsolutePath() + source);
+		File dest = new File(getAbsolutePath() + destination);
+		
+		// DEBUG
+		//System.out.println("Does " + temp.getCanonicalPath() + " exists: " + temp.exists() + " (" + temp.getAbsolutePath() + ")");
+		//System.out.println("Does " + dest.getCanonicalPath() + " exists: " + temp.exists()+ " (" + dest.getAbsolutePath() + ")");
 		
 		if(!dest.isDirectory() || !dest.exists()) {
 			dest.mkdir();
 		}
 		
 		if(temp.exists()) {
-			Files.move(temp.toPath(), new File(destination + temp.getName()).toPath(), copyOption); // TODO: prompt users via GUI button press for the copy option
+			Files.move(temp.toPath(), new File(getAbsolutePath() + destination + temp.getName()).toPath(), copyOption); // TODO: prompt users via GUI button press for the copy option
 		}
 		refreshWorkspace();
 		return temp;
 	}
 	
-	public boolean checkWorkspace() {
+	/*public File addFile(String filename, byte[] data, String destination) throws Exception {
+		checkWorkspace();
+		if(!destination.endsWith("\\")) {
+			destination += "\\";
+		}
+		//File temp = new File(source);
+		File dest = new File(destination + filename);
+		if(dest.exists()) {
+			// replace/prompt for different name
+		}
+		Files.write(dest.toPath(), data, StandardOpenOption.CREATE_NEW);
+		return new File("temp");
+	}*/
+		
+	public boolean checkWorkspace() throws Exception {
 		if(ws == null) {
-			return false;
+			throw new Exception("Workspace has not been set.");
+			//return false;
 		} else if(!ws.isDirectory()) {
-			return false;
-		} else if(!ws.exists()) {
-			return false;
+			throw new Exception("Workspace is not a directory.");
 		} else {
 			return true;
 		}
@@ -141,6 +157,14 @@ public class Workspace {
 			}
 		
 		}
+	}
+	
+	public String getAbsolutePath() {
+		return ws.getAbsolutePath() + "\\";
+	}
+	
+	public File getWorkspace() {
+		return ws;
 	}
 	
 	public ArrayList<File> getFiles() {
