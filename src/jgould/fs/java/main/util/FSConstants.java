@@ -1,12 +1,19 @@
-package jgould.fs.java.main;
+package jgould.fs.java.main.util;
 
 import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-public class FileServerConstants {
+public class FSConstants {
 
 	public static final Charset CHARSET = StandardCharsets.UTF_8;
+	
+	public static final String REQUEST = "REQUEST"; // REQUEST:path/to/file/requested:requested/file/desired/location/
+	public static final String SEND = "SEND";
+	public static final String REMOVE = "REMOVE";
+	public static final String MOVE = "MOVE";
+	
+	public static final char DELIMITER = ':';
 	
 	private static File trashBin;
 
