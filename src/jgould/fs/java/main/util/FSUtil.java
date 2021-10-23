@@ -72,15 +72,9 @@ public class FSUtil {
 		}*/
 		path = checkPath(path);
 		if(path.endsWith(File.separator)) { // is a directory find parent folder 
-			//path =  (path.substring(0, path.lastIndexOf(File.separator))).substring(0, path.lastIndexOf(File.separator));
-			
 			path = (path.substring(0, path.lastIndexOf(File.separator)));
 			path = path.substring(0, path.lastIndexOf(File.separator) + 1);
 			System.out.println("twice:" + path);
-			
-			//System.out.println("once:" + path.substring(0, path.lastIndexOf(File.separator)));
-			//System.out.println("twice:" + path.substring(0, path.lastIndexOf(File.separator)).substring(0, ));
-			
 		} else { // is a file return parent folder
 			path = path.substring(0, path.lastIndexOf(File.separator) + 1);
 		}

@@ -1,11 +1,19 @@
 package jgould.fs.java.main.client;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.Base64;
+
+import jgould.fs.java.main.util.FSConstants;
+import jgould.fs.java.main.util.FSUtil;
+import jgould.fs.java.main.util.Workspace;
 
 public class Client implements Runnable {
 
@@ -13,13 +21,17 @@ public class Client implements Runnable {
 	private OutputStreamWriter writer;
 	private BufferedReader reader;
 	
+	private Workspace workspace = null;
+	
 	private Thread thread = null;
 	private boolean running = true;
 	
 	public static void main(String[] args) {
 		try {
-			Client c = new Client("127.0.0.1", 80, 5000);
-		} catch (IOException e) {
+			Workspace w = new Workspace();
+			w.setWorkspace("workspace/");
+			Client c = new Client("127.0.0.1", 80, 5000, w);
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
@@ -36,6 +48,36 @@ public class Client implements Runnable {
 		
 		this.start();
 	}
+	
+	/**
+	 * Creates a client instance and connects to given server IP at selected port with specified timeout. Sets the workspace to the absolute path given.
+	 * 
+	 * @param serverIP server IP address
+	 * @param portNumber port number to connect to 
+	 * @param timeout socket timeout
+	 * @param pathToWorkspace absolute path to workspace
+	 * @throws IOException
+	 */
+	public Client(String serverIP, int portNumber, int timeout, String pathToWorkspace) throws IOException, Exception {
+		socket = new Socket();
+		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
+		System.out.println("connection made");
+		
+		this.workspace = new Workspace();
+		this.workspace.setWorkspace(pathToWorkspace);
+		
+		this.start();
+	}
+	
+	public Client(String serverIP, int portNumber, int timeout, Workspace workspace) throws IOException {
+		socket = new Socket();
+		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
+		System.out.println("connection made");
+		
+		this.workspace = workspace; 
+		
+		this.start();
+	}
 
 	private void disconnect() {
 		if (socket != null) {
@@ -44,10 +86,8 @@ public class Client implements Runnable {
 				socket = null;
 			} catch (IOException e) {
 				e.printStackTrace();
-				// System.out.println("Failed to disconnect. Error disconnecting.");
 			}
 		} else {
-			// System.out.println("Failed to disconnect. Null socket.");
 			socket = null;
 		}
 	}
@@ -73,26 +113,46 @@ public class Client implements Runnable {
 			return false;
 		}
 	}
+	
+	private void sendFileRequest(String pathToFile, String filename, String destination) throws IOException {
+		destination = FSUtil.checkDirectoryEnding(destination);
+		if(pathToFile.endsWith(filename)) {
+			filename = "";
+		} 
+		pathToFile = FSUtil.checkDirectoryEnding(pathToFile);
+		writer.write(FSConstants.REQUEST + FSConstants.DELIMITER + pathToFile + filename + FSConstants.DELIMITER + destination + "\r\n");
+		writer.flush();
+	}
+	
+	private void parseCommand(String input) throws IOException {
+		if(input.startsWith(FSConstants.FILE)) {
+			String[] split = input.split(FSConstants.DELIMITER);
+			
+			String destination = split[1];
+			String name = split[2];
+			String size = split[3]; // Not actually needed since the byte[] data is separated using ':' and included with the string of data sent over the server's worker OutputStream 
+			String string_data = split[4];
+			
+			byte[] data = Base64.getDecoder().decode(string_data);
+			workspace.addFile(name, data, destination, StandardOpenOption.CREATE);
+		}
+	}
 
 	@Override
 	public void run() {
 		String input;
-		
 		try {
-			System.out.println("here");
 			if(socket != null && !socket.isClosed()) {
 				writer = new OutputStreamWriter(socket.getOutputStream());
 				reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			}
-			writer.write("echo\n");
-			writer.flush();
-			while((input = reader.readLine()) != null && socket.isConnected()) {
+			
+			// Send server requests here until client GUI is implemented
+			sendFileRequest("server_workspace/image - Copy (2).png", "image - Copy (2).png",  "workspace/test/");
+						
+			while((input = reader.readLine()) != null) {
 				System.out.println("Data received:" + input);
-				
-				if(input.trim().equals("echo")) {
-					writer.write("echo\n");
-					writer.flush();
-				}
+				parseCommand(input);
 			}
 			writer.flush();
 			writer.close();
@@ -100,53 +160,8 @@ public class Client implements Runnable {
 			disconnect();
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
-			
 		}
-		
 	}
-	
-	/*@Override
-	public void run() {
-		String input;
-		while (socket.isConnected() == false) { // waiting thread until socket is connected? should already be connected
-			if (socket.isConnected()) {
-				break;
-			}
-		} // Awaiting connection before allowing the run statement to commence
-
-		try {
-			// connect as soon as client starts
-			if (!socket.isClosed()) {
-				writer = new OutputStreamWriter(socket.getOutputStream());
-				reader = new InputStreamReader(socket.getInputStream());
-			}
-			
-			while ((input = reader.readLine()) != null || socket.isClosed()) { // Once this loop ends the entire socket gets closed
-				System.out.println("hello");
-				System.out.println("Data received:" + input);
-				
-				writer.write(input.getBytes());
-				
-			}
-			System.out.println("flushign");
-			writer.flush();
-			writer.close();
-			ImageIO.write(image, "png", new File("image.png"));
-			
-			disconnect();
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			try {
-				if(socket != null) {
-					socket.close();
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}*/
 
 	public synchronized void start() {
 		running = true;
@@ -174,6 +189,10 @@ public class Client implements Runnable {
 
 	public String getServerIP() {
 		return socket.getInetAddress().getHostAddress();
+	}
+	
+	public Workspace getWorkspace() {
+		return workspace;
 	}
 
 }

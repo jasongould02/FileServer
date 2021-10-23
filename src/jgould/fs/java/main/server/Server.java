@@ -3,10 +3,10 @@ package jgould.fs.java.main.server;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.util.ArrayList;
 
-import jgould.fs.java.main.FileServerConstants;
+import jgould.fs.java.main.util.FSConstants;
+import jgould.fs.java.main.util.Workspace;
 
 public class Server {
 	
@@ -16,21 +16,33 @@ public class Server {
 	private ArrayList<Worker> workerList = new ArrayList<Worker>();
 	private int workerID = 0;
 	
+	private static Workspace workspace = null;
+	
 	public static void main(String[] args) {
 		try {
 			File f = new File("trash");
 			f.mkdir();
-			FileServerConstants.setTrashBin("trash/");
+			FSConstants.setTrashBin("trash\\");
 			
 			Server s = new Server(80);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public Server(int port) throws IOException {
+	public Server(int port) throws IOException, Exception {
 		this.port = port;
 		server = new ServerSocket(this.port);
+		
+		workspace = new Workspace();
+		workspace.setWorkspace("server_workspace\\");
+		//workspace.refreshWorkspace();
+		
+		workspace.printWorkspace();
+		
+		for(String f : (new File(workspace.getAbsolutePath())).list()) {
+			System.out.println(f);
+		}
 		
 		launchServer();
 	}
@@ -38,13 +50,16 @@ public class Server {
 	private void launchServer() throws IOException {
 		while(true) {
 			System.out.println("Listenting on PORT:" + port + " for a connection...");
-			Socket client = server.accept();
+			//Socket client = server.accept();
 			
 			Worker w = new Worker(server.accept(), workerID);
+			
+			workerList.add(w);
 			workerID += 1;
 			
 			System.out.println("Connection made.");
 			System.out.println("Clearing idle workers.");
+			removeClosedSockets();
 			
 		}
 	}
@@ -66,7 +81,9 @@ public class Server {
 		removeQueue = null;
 	}
 	
-	
+	protected static Workspace getWorkspace() {
+		return workspace; 
+	}
 	
 	
 	
