@@ -6,6 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import jgould.fs.java.main.client.FSRemoteFile;
 
 /**
  * NOTE: Workspace uses canonical paths as the arguments for the methods when passing String objects for paths.
@@ -32,7 +36,7 @@ public class Workspace {
 		this.ws = new File(dir);
 		if(ws.isDirectory()) {
 			return ws;
-		} else if(!ws.exists() || ws.isFile()){
+		} else if(ws.isFile()){
 			ws.mkdirs();
 			return ws;
 		} else {
@@ -133,9 +137,136 @@ public class Workspace {
 			return true;
 		}
 	}
+
+	private String getListing(File root) {
+		if(root.isFile()) {
+			return "";
+		}
+		String listing = "";
+		String rootPath = root.getPath();
+		rootPath = FSUtil.checkDirectoryEnding(rootPath);
+		
+		listing += rootPath + ":";
+		int i = 0;
+		File[] list = root.listFiles();
+		if(list != null) {
+			for(i = 0; i < list.length; i++) {
+				if(list[i] == null) { // TODO: fix
+					continue;
+					//System.out.println("its null!");
+				}
+				listing += list[i].getName();
+				if(list[i].isDirectory()) {
+					//System.out.println("dir:" + list[i].getName());
+					listing += File.separator;
+				}
+				if(i == (list.length-1)) {
+					//System.out.println("last index");
+					listing += ";";
+				} else {
+					listing += ":";
+				}
+			}
+		}
+		return listing;
+	}
 	
-	public File[] listWorkspace() {
-		return getWorkspace().listFiles(); 
+	/**
+	 * Prints out list of files in the current workspace
+	 * @return
+	 */
+	public String listContents() {
+		File root = this.getWorkspace();
+		String output = "";
+		
+		output += getListing(root);
+		for(File f : root.listFiles()) {
+			output += getListing(f);
+		}
+		
+		return output;
+	}
+	
+	/**
+	 * Will search given directory and all sub-directories. All files and directories will be returned in an ArrayList
+	 * 
+	 * @param file
+	 * @return an unsorted ArrayList<{@link String}> of paths found in directory and sub-directories
+	 */
+	public ArrayList<String> searchDirectory(File file) {
+		ArrayList<String> list = new ArrayList<String>();
+		if(file != null) {
+			for (File f : file.listFiles()) {
+				list.add(f.getPath());
+				System.out.println(f.getPath());
+
+				if (f.isDirectory()) {
+					ArrayList<String> temp = searchDirectory(f);
+					//list.addAll(searchDirectory(f));
+					list.addAll(temp);
+				}
+			}
+		}
+		return list;
+	}
+	
+	/**
+	 * Creates a FSRemoteFile tree from list of paths 
+	 * 
+	 * @param pathList
+	 * @return
+	 */
+	public FSRemoteFile constructRemoteFileTree(ArrayList<String> pathList) {
+		Collections.sort(pathList);
+		FSRemoteFile rootFile = new FSRemoteFile();
+		
+		for(String path : pathList) {
+			String[] split = path.split("\\\\");
+			
+			// DEBUG
+			/*for(String s : split) {
+				System.out.print(s + ",");
+			} System.out.print("\n");*/
+			
+			int splitLength = split.length;
+			FSRemoteFile currNode = rootFile;
+			
+			for(int i=0;i < splitLength; i++) {
+				if(currNode.getName() == null) {
+					currNode.setName(split[i]);
+					//rootFile = new FSRemoteFile(split[i]);
+					currNode = rootFile;
+					//continue;
+				}
+				
+				if(currNode.getName().equals(split[i])) {
+					if((i+1) < splitLength) {
+						if(currNode.hasChild(split[i+1])) {
+							currNode = currNode.getChild(split[i+1]);
+							continue;
+						} else {
+							FSRemoteFile newNode = new FSRemoteFile(split[i+1]);
+							currNode.addChild(newNode);
+							currNode = currNode.getChild(split[i+1]);
+						}
+					}
+				}
+			}
+		}
+		return rootFile;
+	}
+	
+	@Deprecated
+	public void printRemoteFiles(FSRemoteFile f, int depth) {
+		System.out.print(f.getName() + "\n");
+		if(f.getChildren().size() != 0) {
+			for(FSRemoteFile child : f.getChildren()) {
+				for(int i = 0; i < depth; i++) {
+					System.out.print("\t child");
+				}
+				printRemoteFiles(child, depth + 1);
+			}
+		}
 	}
 	
 	public void printWorkspace() {
@@ -146,6 +277,11 @@ public class Workspace {
 	
 	public String getAbsolutePath() {
 		return ws.getAbsolutePath() + File.separator;
+	}
+	
+	@Deprecated
+	public File[] listWorkspace() {
+		return getWorkspace().listFiles(); 
 	}
 	
 	public File getWorkspace() {
