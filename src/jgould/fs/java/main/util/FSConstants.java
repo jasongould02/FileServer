@@ -12,6 +12,7 @@ public class FSConstants {
 	public static final String DELIMITER = ":";
 	
 	public static final String REQUEST = "REQUEST"; // REQUEST:path/to/file/requested:requested/file/desired/location/
+	public static final String DIRREQUEST = "DIRECTORY_LIST_REQUEST"; // request for directory list
 	public static final String SEND = "SEND";
 	public static final String REMOVE = "REMOVE";
 	public static final String MOVE = "MOVE";

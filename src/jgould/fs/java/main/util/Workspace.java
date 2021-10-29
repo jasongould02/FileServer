@@ -127,6 +127,13 @@ public class Workspace {
 		return dest;
 	}
 	
+	public File addDirectory(String folderName, String destination) {
+		File dest = new File(FSUtil.checkDirectoryEnding(destination));
+		dest.mkdirs();
+		
+		return dest;
+	}
+	
 	public boolean checkWorkspace() throws Exception {
 		if(ws == null) {
 			throw new Exception("Workspace has not been set.");

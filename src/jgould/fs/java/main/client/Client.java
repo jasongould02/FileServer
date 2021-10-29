@@ -127,6 +127,11 @@ public class Client implements Runnable {
 	private void parseCommand(String input) throws IOException {
 		if(input.startsWith(FSConstants.FILE)) {
 			String[] split = input.split(FSConstants.DELIMITER);
+			System.out.println("command length:" + split.length);
+			if(split.length != 5) {
+				System.out.println("Error in command received");
+				return;
+			}
 			
 			String destination = split[1];
 			String name = split[2];
@@ -135,6 +140,13 @@ public class Client implements Runnable {
 			
 			byte[] data = Base64.getDecoder().decode(string_data);
 			workspace.addFile(name, data, destination, StandardOpenOption.CREATE);
+		} else if(input.startsWith(FSConstants.FOLDER)) {
+			String[] split = input.split(FSConstants.DELIMITER);
+			
+			String destination = split[1];
+			String folderName = split[2];
+			
+			workspace.addDirectory(folderName, destination);
 		}
 	}
 
@@ -148,9 +160,11 @@ public class Client implements Runnable {
 			}
 			
 			// Send server requests here until client GUI is implemented
-			sendFileRequest("server_workspace/image - Copy (2).png", "image - Copy (2).png",  "workspace/test/");
+			//sendFileRequest("server_workspace/image - Copy (2).png", "image - Copy (2).png",  "workspace/test/");
+			
+			sendFileRequest("server_workspace/testfolder/", "",  "workspace/temp/test/");
 						
-			while((input = reader.readLine()) != null) {
+			while((input = reader.readLine()) != null) { // Not very good for large files (AFAIK >~ 4 MB) 
 				System.out.println("Data received:" + input);
 				parseCommand(input);
 			}
@@ -194,5 +208,5 @@ public class Client implements Runnable {
 	public Workspace getWorkspace() {
 		return workspace;
 	}
-
+	
 }

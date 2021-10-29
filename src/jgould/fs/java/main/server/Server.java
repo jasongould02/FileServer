@@ -60,7 +60,6 @@ public class Server {
 			System.out.println("Connection made.");
 			System.out.println("Clearing idle workers.");
 			removeClosedSockets();
-			
 		}
 	}
 	

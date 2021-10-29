@@ -43,6 +43,15 @@ public class Worker implements Runnable {
 				if(src.isFile()) {
 					sendFile(src, destination);
 				} else if(src.isDirectory()) {
+					sendDirectory(src, destination, destination);
+					/*for(File f : src.listFiles()) {
+						sendFile(f, destination);
+						
+						if(f.isDirectory()) {
+							
+						}
+					}
+*/					//sendFile()
 					// TODO: Implement directory requests
 					/*byte[] data = Files.readAllBytes(src.toPath());
 					String string_data = Base64.getEncoder().encodeToString(data);
@@ -53,11 +62,24 @@ public class Worker implements Runnable {
 		}
 	}
 	
+	private void sendDirectory(File file, final String originalDestination, String destination) throws IOException {
+		for(File f : file.listFiles()) {
+			if(f.isDirectory()) {
+				System.out.println("now sending to new folder:" + destination + ":" + f.getName());
+				writer.write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(f.getName()));
+				writer.flush();
+				sendDirectory(f, originalDestination, destination + f.getName());
+			} else {
+				sendFile(f, destination);
+			}
+		}
+	}
+	
 	private void sendFile(File src, String destination) throws IOException {
 		byte[] data = FSUtil.getFileBytes(src);
 		String string_data = Base64.getEncoder().encodeToString(data);
-		this.writer.write("FILE:" + destination + ":" + src.getName() + ":" + data.length + ":" + string_data + "\r\n");
-		this.writer.flush();
+		writer.write(FSConstants.FILE + ":" + destination + ":" + src.getName() + ":" + data.length + ":" + string_data + "\r\n");
+		writer.flush();
 	}
 	
 /*	private void sendDirectory(File directory, String destination, OutputStreamWriter writer) throws IOException { 
