@@ -4,14 +4,16 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+import jgould.fs.java.main.client.FSRemoteFile;
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
-import jgould.fs.java.main.util.Workspace;
+import jgould.fs.java.main.util.FSWorkspace;
 
 public class WorkspaceTest {
 
 	public static void main(String[] args) {
-		Workspace w = new Workspace();
+		
+		FSWorkspace w = new FSWorkspace();
 		File f = new File("trash");
 		try {
 			w.setWorkspace("workspace");
@@ -40,7 +42,8 @@ public class WorkspaceTest {
 			String filename = "image1.png";
 			
 			//FSUtil.getParent(FSUtil.getParent(FSUtil.getParent(destination)));
-			FSUtil.getParent("workspace\\copyAttributes\\");
+			FSUtil.getParent(FSUtil.getParent("workspace\\copyAttributes\\"));
+			System.out.println("^^^^^");
 			FSUtil.getParent(destination);
 			
 			if(destination.endsWith(filename)) {
@@ -57,9 +60,24 @@ public class WorkspaceTest {
 			System.out.println(temp);
 			//w.moveFile("image.png", "tempfolder", StandardCopyOption.REPLACE_EXISTING);
 			//System.out.println(w.deleteFile(w.getAbsolutePath() + "testfolder/image.png", StandardCopyOption.REPLACE_EXISTING));
+			
+			System.out.println("\n\n");
+			
+			//System.out.println(w.getListing(w.getWorkspace()));
+			System.out.println(w.listContents());
+
+			
+			System.out.println("\n\n");
+			//System.out.println(w.parseDirectoryListing(root, rootPath));
+			/*for(File s : w.listWorkspace()) {
+				System.out.println(FSUtil.checkPath(s.getPath()));
+			}*/
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+	
+	
 	
 }

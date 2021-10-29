@@ -13,7 +13,7 @@ import java.util.Base64;
 
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
-import jgould.fs.java.main.util.Workspace;
+import jgould.fs.java.main.util.FSWorkspace;
 
 public class Client implements Runnable {
 
@@ -21,14 +21,14 @@ public class Client implements Runnable {
 	private OutputStreamWriter writer;
 	private BufferedReader reader;
 	
-	private Workspace workspace = null;
+	private FSWorkspace workspace = null;
 	
 	private Thread thread = null;
 	private boolean running = true;
 	
 	public static void main(String[] args) {
 		try {
-			Workspace w = new Workspace();
+			FSWorkspace w = new FSWorkspace();
 			w.setWorkspace("workspace/");
 			Client c = new Client("127.0.0.1", 80, 5000, w);
 		} catch (Exception e) {
@@ -63,13 +63,13 @@ public class Client implements Runnable {
 		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
 		System.out.println("connection made");
 		
-		this.workspace = new Workspace();
+		this.workspace = new FSWorkspace();
 		this.workspace.setWorkspace(pathToWorkspace);
 		
 		this.start();
 	}
 	
-	public Client(String serverIP, int portNumber, int timeout, Workspace workspace) throws IOException {
+	public Client(String serverIP, int portNumber, int timeout, FSWorkspace workspace) throws IOException {
 		socket = new Socket();
 		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
 		System.out.println("connection made");
@@ -165,7 +165,7 @@ public class Client implements Runnable {
 			sendFileRequest("server_workspace/testfolder/", "",  "workspace/temp/test/");
 						
 			while((input = reader.readLine()) != null) { // Not very good for large files (AFAIK >~ 4 MB) 
-				System.out.println("Data received:" + input);
+				//System.out.println("Data received:" + input);
 				parseCommand(input);
 			}
 			writer.flush();
@@ -205,7 +205,7 @@ public class Client implements Runnable {
 		return socket.getInetAddress().getHostAddress();
 	}
 	
-	public Workspace getWorkspace() {
+	public FSWorkspace getWorkspace() {
 		return workspace;
 	}
 	

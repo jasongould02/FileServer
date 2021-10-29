@@ -6,7 +6,7 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 
 import jgould.fs.java.main.util.FSConstants;
-import jgould.fs.java.main.util.Workspace;
+import jgould.fs.java.main.util.FSWorkspace;
 
 public class Server {
 	
@@ -16,7 +16,7 @@ public class Server {
 	private ArrayList<Worker> workerList = new ArrayList<Worker>();
 	private int workerID = 0;
 	
-	private static Workspace workspace = null;
+	private static FSWorkspace workspace = null;
 	
 	public static void main(String[] args) {
 		try {
@@ -34,7 +34,7 @@ public class Server {
 		this.port = port;
 		server = new ServerSocket(this.port);
 		
-		workspace = new Workspace();
+		workspace = new FSWorkspace();
 		workspace.setWorkspace("server_workspace\\");
 		//workspace.refreshWorkspace();
 		
@@ -80,7 +80,7 @@ public class Server {
 		removeQueue = null;
 	}
 	
-	protected static Workspace getWorkspace() {
+	protected static FSWorkspace getWorkspace() {
 		return workspace; 
 	}
 	
