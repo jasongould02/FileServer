@@ -194,21 +194,6 @@ public class FSWorkspace {
 		return output;
 	}
 	
-
-	
-	@Deprecated
-	public void printRemoteFiles(FSRemoteFile f, int depth) {
-		System.out.print(f.getName() + "\n");
-		if(f.getChildren().size() != 0) {
-			for(FSRemoteFile child : f.getChildren()) {
-				for(int i = 0; i < depth; i++) {
-					System.out.print("\t child");
-				}
-				printRemoteFiles(child, depth + 1);
-			}
-		}
-	}
-	
 	public void printWorkspace() {
 		for(String file : ws.list()) {
 			System.out.println(file);

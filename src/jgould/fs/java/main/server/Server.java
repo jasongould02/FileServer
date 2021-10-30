@@ -80,7 +80,7 @@ public class Server {
 		removeQueue = null;
 	}
 	
-	protected static FSWorkspace getWorkspace() {
+	protected static FSWorkspace getFSWorkspace() {
 		return workspace; 
 	}
 	

@@ -1,14 +1,13 @@
 package jgould.fs.java.main.client;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Base64;
 
 import jgould.fs.java.main.util.FSConstants;
@@ -22,9 +21,12 @@ public class Client implements Runnable {
 	private BufferedReader reader;
 	
 	private FSWorkspace workspace = null;
+	private FSRemoteFile remoteFileTree = null;
+	private ArrayList<String> remotePathList = new ArrayList<String>();
 	
 	private Thread thread = null;
 	private boolean running = true;
+	
 	
 	public static void main(String[] args) {
 		try {
@@ -69,7 +71,7 @@ public class Client implements Runnable {
 		this.start();
 	}
 	
-	public Client(String serverIP, int portNumber, int timeout, FSWorkspace workspace) throws IOException {
+	private Client(String serverIP, int portNumber, int timeout, FSWorkspace workspace) throws IOException {
 		socket = new Socket();
 		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
 		System.out.println("connection made");
@@ -114,13 +116,18 @@ public class Client implements Runnable {
 		}
 	}
 	
-	private void sendFileRequest(String pathToFile, String filename, String destination) throws IOException {
+	protected void sendFileRequest(String pathToFile, String filename, String destination) throws IOException {
 		destination = FSUtil.checkDirectoryEnding(destination);
 		if(pathToFile.endsWith(filename)) {
 			filename = "";
 		} 
 		pathToFile = FSUtil.checkDirectoryEnding(pathToFile);
 		writer.write(FSConstants.REQUEST + FSConstants.DELIMITER + pathToFile + filename + FSConstants.DELIMITER + destination + "\r\n");
+		writer.flush();
+	}
+	
+	protected void sendDirectoryListingRequest() throws IOException {
+		writer.write(FSConstants.DIRECTORY_LIST_REQUEST + "\r\n");
 		writer.flush();
 	}
 	
@@ -147,6 +154,15 @@ public class Client implements Runnable {
 			String folderName = split[2];
 			
 			workspace.addDirectory(folderName, destination);
+		} else if(input.startsWith(FSConstants.DIRECTORY_LIST)) {
+			ArrayList<String> listing = new ArrayList<String>();
+			String[] split = input.split(FSConstants.DELIMITER);
+			
+			for(int i = 1; i < split.length; i++) {
+				listing.add(split[i]);
+			}
+			
+			this.setRemoteFileTree(FSRemoteFileTree.constructRemoteFileTree(listing));
 		}
 	}
 
@@ -175,6 +191,14 @@ public class Client implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	private void setRemoteFileTree(FSRemoteFile root) {
+		this.remoteFileTree = root;
+	}
+	
+	protected FSRemoteFile getRemoteFileTree() {
+		return this.remoteFileTree;
 	}
 
 	public synchronized void start() {
@@ -205,8 +229,23 @@ public class Client implements Runnable {
 		return socket.getInetAddress().getHostAddress();
 	}
 	
-	public FSWorkspace getWorkspace() {
+	public FSWorkspace getFSWorkspace() {
 		return workspace;
+	}
+	public void setFSWorkspace(FSWorkspace w) {
+		this.workspace = w;
+	}
+	
+	public void setFSWorkspace(String pathToWorkspace) {
+		try {
+			this.workspace = new FSWorkspace(pathToWorkspace);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public ArrayList<String> getRemotePathList() {
+		return remotePathList;
 	}
 	
 }
