@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Base64;
 
+import jgould.fs.java.main.client.FSRemoteFileTree;
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
 
@@ -44,22 +46,21 @@ public class Worker implements Runnable {
 					sendFile(src, destination);
 				} else if(src.isDirectory()) {
 					sendDirectory(src, destination, destination);
-					/*for(File f : src.listFiles()) {
-						sendFile(f, destination);
-						
-						if(f.isDirectory()) {
-							
-						}
-					}
-*/					//sendFile()
-					// TODO: Implement directory requests
-					/*byte[] data = Files.readAllBytes(src.toPath());
-					String string_data = Base64.getEncoder().encodeToString(data);
-					writer.write("FILE:" + src.getName() + ":" + data.length + ":" + string_data + "\r\n");
-					writer.flush();*/
 				}
 			} 
+		} else if(input.startsWith(FSConstants.DIRECTORY_LIST_REQUEST)) {
+			ArrayList<String> listing = FSRemoteFileTree.searchDirectory(Server.getFSWorkspace().getWorkspace());
+			String string_listing = "";
+			for(String s : listing) {
+				string_listing += s + ":";
+			}
+			sendListing(string_listing);
 		}
+	}
+	
+	private void sendListing(String listing) throws IOException {
+		writer.write(FSConstants.DIRECTORY_LIST + ":" + listing);
+		writer.flush();
 	}
 	
 	private void sendDirectory(File file, final String originalDestination, String destination) throws IOException {
