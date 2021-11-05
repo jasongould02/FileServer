@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.file.StandardOpenOption;
@@ -40,15 +41,16 @@ public class Client implements Runnable {
 	
 	public Client() {
 		socket = new Socket();
-		this.start();
+		//this.start();
 	}
 	
 	public Client(String serverIP, int portNumber, int timeout) throws IOException {
 		socket = new Socket();
-		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
+		//socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
+		this.connectToServer(serverIP, portNumber, timeout);
 		System.out.println("connection made");
 		
-		this.start();
+		//this.start();
 	}
 	
 	/**
@@ -62,23 +64,23 @@ public class Client implements Runnable {
 	 */
 	public Client(String serverIP, int portNumber, int timeout, String pathToWorkspace) throws IOException, Exception {
 		socket = new Socket();
-		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
+		this.connectToServer(serverIP, portNumber, timeout);
 		System.out.println("connection made");
 		
-		this.workspace = new FSWorkspace();
-		this.workspace.setWorkspace(pathToWorkspace);
+		this.workspace = new FSWorkspace(pathToWorkspace);
 		
-		this.start();
+		//this.start();
 	}
 	
 	private Client(String serverIP, int portNumber, int timeout, FSWorkspace workspace) throws IOException {
 		socket = new Socket();
-		socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
+		//socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
+		this.connectToServer(serverIP, portNumber, timeout);
 		System.out.println("connection made");
 		
 		this.workspace = workspace; 
 		
-		this.start();
+		//this.start();
 	}
 
 	private void disconnect() {
@@ -94,24 +96,24 @@ public class Client implements Runnable {
 		}
 	}
 
-	private boolean connectToServer(String ipAddress, String portNumber) {
+	protected boolean connectToServer(String ipAddress, int portNumber, int timeout) {
 		if (socket == null) {
 			socket = new Socket();
 		} else if (socket.isClosed()) {
 			socket = null;
 			socket = new Socket();
 		}
-
 		try {
-			socket.connect(new InetSocketAddress(ipAddress, Integer.parseInt(portNumber)));
+			socket.connect(new InetSocketAddress(ipAddress, portNumber), timeout);
+			writer = new OutputStreamWriter(socket.getOutputStream());
+			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			if(this.running == false || this.thread == null) {
+				this.start();
+			}
+			return true;
 		} catch (NumberFormatException | IOException e) {
 			e.printStackTrace();
 			System.out.println("Failed to connect.");
-		}
-
-		if (socket.isConnected()) {
-			return true;
-		} else {
 			return false;
 		}
 	}
@@ -122,19 +124,36 @@ public class Client implements Runnable {
 			filename = "";
 		} 
 		pathToFile = FSUtil.checkDirectoryEnding(pathToFile);
-		writer.write(FSConstants.REQUEST + FSConstants.DELIMITER + pathToFile + filename + FSConstants.DELIMITER + destination + "\r\n");
-		writer.flush();
+		write(FSConstants.REQUEST + FSConstants.DELIMITER + pathToFile + filename + FSConstants.DELIMITER + destination);
+	}
+	
+	/**
+	 * If the Client's writer is not null, this method will write the given string and append '\r\n'.
+	 * This method flushes after the String has been written
+	 * @param data
+	 */
+	private void write(String data) {
+		if(writer != null) {
+			try {
+				writer.write(data + "\r\n");
+				writer.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			System.out.println("Writer is null, client cannot send data.");
+		}
 	}
 	
 	protected void sendDirectoryListingRequest() throws IOException {
-		writer.write(FSConstants.DIRECTORY_LIST_REQUEST + "\r\n");
-		writer.flush();
+		write(FSConstants.DIRECTORY_LIST_REQUEST);
 	}
 	
 	private void parseCommand(String input) throws IOException {
+		System.out.println("received command:" + input);
 		if(input.startsWith(FSConstants.FILE)) {
 			String[] split = input.split(FSConstants.DELIMITER);
-			System.out.println("command length:" + split.length);
+			//System.out.println("command length:" + split.length);
 			if(split.length != 5) {
 				System.out.println("Error in command received");
 				return;
@@ -155,13 +174,16 @@ public class Client implements Runnable {
 			
 			workspace.addDirectory(folderName, destination);
 		} else if(input.startsWith(FSConstants.DIRECTORY_LIST)) {
+			System.out.println("received listing:");
 			ArrayList<String> listing = new ArrayList<String>();
 			String[] split = input.split(FSConstants.DELIMITER);
 			
 			for(int i = 1; i < split.length; i++) {
 				listing.add(split[i]);
+				System.out.println("listing:"+split[i]);
 			}
-			
+			this.remotePathList.clear();
+			remotePathList.addAll(listing);
 			this.setRemoteFileTree(FSRemoteFileTree.constructRemoteFileTree(listing));
 		}
 	}
@@ -178,7 +200,8 @@ public class Client implements Runnable {
 			// Send server requests here until client GUI is implemented
 			//sendFileRequest("server_workspace/image - Copy (2).png", "image - Copy (2).png",  "workspace/test/");
 			
-			sendFileRequest("server_workspace/testfolder/", "",  "workspace/temp/test/");
+			//sendFileRequest("server_workspace/testfolder/", "",  "workspace/temp/test/");
+			this.sendDirectoryListingRequest();
 						
 			while((input = reader.readLine()) != null) { // Not very good for large files (AFAIK >~ 4 MB) 
 				//System.out.println("Data received:" + input);
