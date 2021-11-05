@@ -38,8 +38,6 @@ public class Server {
 		workspace.setWorkspace("server_workspace\\");
 		//workspace.refreshWorkspace();
 		
-		workspace.printWorkspace();
-		
 		for(String f : (new File(workspace.getAbsolutePath())).list()) {
 			System.out.println(f);
 		}

@@ -180,8 +180,10 @@ public class FSWorkspace {
 	
 	/**
 	 * Prints out list of files in the current workspace
+	 * 
 	 * @return
 	 */
+	@Deprecated
 	public String listContents() {
 		File root = this.getWorkspace();
 		String output = "";
@@ -192,12 +194,6 @@ public class FSWorkspace {
 		}
 		
 		return output;
-	}
-	
-	public void printWorkspace() {
-		for(String file : ws.list()) {
-			System.out.println(file);
-		}
 	}
 	
 	public String getAbsolutePath() {

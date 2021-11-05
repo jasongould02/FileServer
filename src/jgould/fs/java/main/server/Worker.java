@@ -49,6 +49,7 @@ public class Worker implements Runnable {
 				}
 			} 
 		} else if(input.startsWith(FSConstants.DIRECTORY_LIST_REQUEST)) {
+			System.out.println("listing requested");
 			ArrayList<String> listing = FSRemoteFileTree.searchDirectory(Server.getFSWorkspace().getWorkspace());
 			String string_listing = "";
 			for(String s : listing) {
@@ -59,16 +60,15 @@ public class Worker implements Runnable {
 	}
 	
 	private void sendListing(String listing) throws IOException {
-		writer.write(FSConstants.DIRECTORY_LIST + ":" + listing);
-		writer.flush();
+		//System.out.println("sending:"+FSConstants.DIRECTORY_LIST + ":" + listing);
+		write(FSConstants.DIRECTORY_LIST + ":" + listing);
 	}
 	
 	private void sendDirectory(File file, final String originalDestination, String destination) throws IOException {
 		for(File f : file.listFiles()) {
 			if(f.isDirectory()) {
-				System.out.println("now sending to new folder:" + destination + ":" + f.getName());
-				writer.write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(f.getName()));
-				writer.flush();
+				//System.out.println("now sending to new folder:" + destination + ":" + f.getName());
+				write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(f.getName()));
 				sendDirectory(f, originalDestination, destination + f.getName());
 			} else {
 				sendFile(f, destination);
@@ -79,15 +79,8 @@ public class Worker implements Runnable {
 	private void sendFile(File src, String destination) throws IOException {
 		byte[] data = FSUtil.getFileBytes(src);
 		String string_data = Base64.getEncoder().encodeToString(data);
-		writer.write(FSConstants.FILE + ":" + destination + ":" + src.getName() + ":" + data.length + ":" + string_data + "\r\n");
-		writer.flush();
+		write(FSConstants.FILE + ":" + destination + ":" + src.getName() + ":" + data.length + ":" + string_data);
 	}
-	
-/*	private void sendDirectory(File directory, String destination, OutputStreamWriter writer) throws IOException { 
-		if(directory.isDirectory() && directory.exists()) {
-		}
-	}
-*/	
 	
 	@Override
 	public void run() {
@@ -103,6 +96,24 @@ public class Worker implements Runnable {
 			socket.close();
 		} catch(Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * If the Worker's writer is not null, this method will write the given string and append '\r\n'.
+	 * This method flushes after the String has been written
+	 * @param data
+	 */
+	private void write(String data) {
+		if(writer != null) {
+			try {
+				writer.write(data + "\r\n");
+				writer.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} else {
+			System.out.println("Writer is null, client cannot send data.");
 		}
 	}
 	

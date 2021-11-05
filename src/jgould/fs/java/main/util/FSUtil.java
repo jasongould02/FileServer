@@ -74,12 +74,12 @@ public class FSUtil {
 		if(path.endsWith(File.separator)) { // is a directory find parent folder 
 			path = (path.substring(0, path.lastIndexOf(File.separator)));
 			path = path.substring(0, path.lastIndexOf(File.separator) + 1);
-			System.out.println("twice:" + path);
+			//System.out.println("twice:" + path);
 		} else { // is a file return parent folder
 			path = path.substring(0, path.lastIndexOf(File.separator) + 1);
 		}
 		
-		System.out.println("removeFileName:" + path);
+		//System.out.println("removeFileName:" + path);
 		return path;
 	}
 	
@@ -99,7 +99,7 @@ public class FSUtil {
 			return null;
 		}
 		if(file.exists() && file.isFile()) {
-			return Files.readAllBytes(file.toPath());
+			return Files.readAllBytes(file.toPath()); //TODO: change for larger files that cant fit in reasonably sized byte array
 		} else {
 			return null;
 		}
