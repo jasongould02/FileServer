@@ -17,6 +17,7 @@ public class FSRemoteFileTree {
 	 * @return an unsorted ArrayList<{@link String}> of paths found in directory and sub-directories
 	 */
 	public static ArrayList<String> searchDirectory(File file) {
+		System.out.println("searchDirectory");
 		ArrayList<String> list = new ArrayList<String>();
 		if(file != null) {
 			for (File f : file.listFiles()) {
@@ -75,8 +76,24 @@ public class FSRemoteFileTree {
 					}
 				}
 			}
+			currNode.setPath(path);
 		}
+		//System.out.println("finished constructing new tree.");
 		return rootFile;
+	}
+	
+	public static void printFSRemoteFileTree(FSRemoteFile root, int depth) {
+		if(root != null) {
+			if(root.hasChildren()) {
+				for(FSRemoteFile c : root.getChildren()) {
+					for(int i=0; i < depth; i++) {
+						System.out.print(" ");
+					}
+					System.out.println(c.getName() + " > " + c.getPath());
+					printFSRemoteFileTree(c, depth + 1);
+				}
+			}
+		}
 	}
 	
 }

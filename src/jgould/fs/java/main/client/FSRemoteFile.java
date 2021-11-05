@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class FSRemoteFile {
 
-	//private String remotePath;
+	private String remotePath;
 	private String filename;
 	private ArrayList<FSRemoteFile> children;
 	
@@ -54,6 +54,14 @@ public class FSRemoteFile {
 		return false;
 	}
 	
+	public boolean hasChildren() {
+		if(getChildren().size() != 0) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	public FSRemoteFile getChild(String filename) {
 		for(FSRemoteFile rf : getChildren()) {
 			if(rf.getName().equals(filename)) {
@@ -63,9 +71,13 @@ public class FSRemoteFile {
 		return null;
 	}
 	
-	/*public String getPath() {
+	public String getPath() {
 		return remotePath;
-	}*/
+	}
+	
+	public void setPath(String path) {
+		this.remotePath = path;
+	}
 	
 	public void setName(String name) {
 		this.filename = name;
