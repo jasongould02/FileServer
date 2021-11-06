@@ -6,9 +6,7 @@ import java.util.Collections;
 
 public class FSRemoteFileTree {
 
-	private FSRemoteFileTree() {
-		
-	}
+	private FSRemoteFileTree() {}
 	
 	/**
 	 * Will search given directory and all sub-directories. All files and directories will be returned in an ArrayList

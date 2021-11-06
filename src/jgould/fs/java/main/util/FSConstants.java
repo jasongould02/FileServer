@@ -21,6 +21,8 @@ public class FSConstants {
 	public static final String FILE = "FILE";
 	public static final String FOLDER = "FOLDER";
 	
+	private FSConstants() {}
+	
 	public static void setTrashBin(String path) {
 		trashBin = new File(path);
 		if(!trashBin.exists() || !trashBin.isDirectory()) {

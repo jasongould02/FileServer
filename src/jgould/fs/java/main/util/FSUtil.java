@@ -6,6 +6,8 @@ import java.nio.file.Files;
 
 public class FSUtil {
 
+	private FSUtil() {}
+	
 	/**
 	 * Replaces any '\\' or '/' characters with {@link File#separator}
 	 * 
