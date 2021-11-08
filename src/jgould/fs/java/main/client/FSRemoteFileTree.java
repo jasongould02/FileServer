@@ -80,6 +80,29 @@ public class FSRemoteFileTree {
 		return rootFile;
 	}
 	
+	/**
+	 * Returns file extension, if the given file name has no extension then null is returned
+	 * @param filename the name of a file {@link FSRemoteFile#getName()}
+	 * @return file extension
+	 */
+	public static String getExtension(String filename) { // Technically FSRemoteFile.getPath() will also work here
+		if(filename != null) {
+			if(filename.contains(".")) {
+				return filename.substring(filename.lastIndexOf("."));
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Calls {@link FSRemoteFileTree#getExtension(String)}
+	 * @param f
+	 * @return file extension
+	 */
+	public static String getExtension(FSRemoteFile file) {
+		return getExtension(file.getName());
+	}
+	
 	public static void printFSRemoteFileTree(FSRemoteFile root, int depth) {
 		if(root != null) {
 			if(root.hasChildren()) {
