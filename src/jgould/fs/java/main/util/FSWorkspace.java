@@ -123,7 +123,8 @@ public class FSWorkspace {
 	}
 	
 	public File addDirectory(String folderName, String destination) {
-		File dest = new File(FSUtil.checkDirectoryEnding(destination));
+		File dest = new File(FSUtil.checkDirectoryEnding(destination) + folderName);
+		System.out.println("add dir" + destination + "\t" + "dest:" + dest.getPath() + "\tfoldername:" + folderName);
 		dest.mkdirs();
 		
 		return dest;

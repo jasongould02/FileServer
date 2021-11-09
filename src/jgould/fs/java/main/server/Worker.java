@@ -45,11 +45,13 @@ public class Worker implements Runnable {
 				if(src.isFile()) {
 					sendFile(src, destination);
 				} else if(src.isDirectory()) {
-					sendDirectory(src, destination, destination);
+					write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(src.getName()));
+					String dest = destination + File.separator + src.getName(); 
+					sendDirectory(src, dest, dest);
 				}
 			} 
 		} else if(input.startsWith(FSConstants.DIRECTORY_LIST_REQUEST)) {
-			System.out.println("listing requested");
+			//System.out.println("listing requested");
 			ArrayList<String> listing = FSRemoteFileTree.searchDirectory(Server.getFSWorkspace().getWorkspace());
 			String string_listing = "";
 			for(String s : listing) {
@@ -69,7 +71,8 @@ public class Worker implements Runnable {
 			if(f.isDirectory()) {
 				//System.out.println("now sending to new folder:" + destination + ":" + f.getName());
 				write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(f.getName()));
-				sendDirectory(f, originalDestination, destination + f.getName());
+				//System.out.println("moving to:"+destination+f.getName());
+				sendDirectory(f, originalDestination, destination + File.separator + f.getName());
 			} else {
 				sendFile(f, destination);
 			}
