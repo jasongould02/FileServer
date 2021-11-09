@@ -113,12 +113,7 @@ public class FSWorkspace {
 	}
 	
 	public File addFile(String filename, byte[] data, String destination, StandardOpenOption option) throws IOException {
-		destination = FSUtil.checkPath(destination);
 		File dest = null;
-		
-		if(FSUtil.getFileName(destination) != null) {
-			destination = FSUtil.getParent(destination);
-		}
 		dest = new File(FSUtil.checkDirectoryEnding(destination));
 		dest.mkdirs(); // create any missing directories
 		
