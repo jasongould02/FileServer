@@ -54,10 +54,12 @@ public class ClientView {
 	private DefaultMutableTreeNode clientJTreeRoot = null;
     private DefaultTreeModel clientJTreeModel = null;
     private JTree clientJTree = null;
+    private FSRemoteFile clientJTreeSelection = null;
     // Server File Tree
     private DefaultMutableTreeNode serverJTreeRoot = null;
     private DefaultTreeModel serverJTreeModel = null;
     private JTree serverJTree = null;
+    private FSRemoteFile serverJTreeSelection = null;
     
     private JPanel centerPanel;
     private JButton filePushButton;
@@ -176,18 +178,15 @@ public class ClientView {
 		serverJTree.addFocusListener(serverJTreeFocusListener);
 		clientJTree.addFocusListener(clientJTreeFocusListener);
 		
-		clientJTree.addTreeSelectionListener(new TreeSelectionListener() {
-
-			@Override
-			public void valueChanged(TreeSelectionEvent e) {
-				DefaultMutableTreeNode node = (DefaultMutableTreeNode) clientJTree.getLastSelectedPathComponent();
-				FSRemoteFile a = (FSRemoteFile) node.getUserObject();
-				System.out.println("remoteFile:" + a.getPath());
-			}
-			
-		});
+		serverJTree.setBorder(new EmptyBorder(0,10,0,10));
+		clientJTree.setBorder(new EmptyBorder(0,10,0,10));
+		
+		clientJTree.addTreeSelectionListener(clientJTreeSelectionListener);
+		serverJTree.addTreeSelectionListener(serverJTreeSelectionListener);
 		//System.out.println("\n");
 		//System.out.println(getClient().getFSWorkspace().listContents());
+		
+		this.refreshServerTreeModel();
 	}
 	
 	private JPanel createCenterPanel() {
@@ -197,9 +196,17 @@ public class ClientView {
 		filePullButton = new JButton("Download File");
 		fileDeleteButton = new JButton("Delete File");
 		
+		filePushButton.setEnabled(false);
+		filePullButton.setEnabled(false);
+		fileDeleteButton.setEnabled(false);
+		
 		filePushButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		filePullButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		fileDeleteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		
+		filePushButton.addActionListener(filePushButtonActionListener);
+		filePullButton.addActionListener(filePullButtonActionListener);
+		fileDeleteButton.addActionListener(fileDeleteButtonActionListener);
 		
 		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 		
@@ -210,6 +217,18 @@ public class ClientView {
 		centerPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
 		
 		return centerPanel;
+	}
+	
+	private void updateCenterPanelButtons() {
+		if(clientJTreeSelection != null && serverJTreeSelection != null) {
+			filePushButton.setEnabled(true);
+			filePullButton.setEnabled(true);
+			fileDeleteButton.setEnabled(true);
+		} else {
+			filePushButton.setEnabled(false);
+			filePullButton.setEnabled(false);
+			fileDeleteButton.setEnabled(false);
+		}
 	}
 	
 	public Client getClient() {
@@ -259,6 +278,17 @@ public class ClientView {
 		this.serverJTree.revalidate();
 	}
 	
+	protected void setClientTreeModel() {
+		
+		this.clientJTree.removeTreeSelectionListener(clientJTreeSelectionListener);
+		
+		DefaultMutableTreeNode root = generateTreeNode(FSRemoteFileTree.constructRemoteFileTree(FSRemoteFileTree.searchDirectory(client.getFSWorkspace().getWorkspace())), null);
+		this.clientJTree.setModel(new DefaultTreeModel(root));
+		this.clientJTree.addTreeSelectionListener(clientJTreeSelectionListener);
+		this.clientJTree.validate();
+		this.clientJTree.revalidate();
+	}
+	
 	protected void refreshServerTreeModel() {
 		if(client != null && client.isConnected()) {
 			try {
@@ -293,7 +323,8 @@ public class ClientView {
 			mainPanel.revalidate();
 			serverWorkspaceRootFile = FSRemoteFileTree.constructRemoteFileTree(client.getRemotePathList());
 			setServerTreeModel(new DefaultTreeModel(generateTreeNode(serverWorkspaceRootFile, null)));
-			FSRemoteFileTree.printFSRemoteFileTree(serverWorkspaceRootFile, 0);
+			setClientTreeModel();
+			//FSRemoteFileTree.printFSRemoteFileTree(serverWorkspaceRootFile, 0);
 			//refreshServerTreeModel();
 		}
 	};
@@ -302,6 +333,57 @@ public class ClientView {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			//client.connectToServer(ipAddress, portNumber, timeout)
+		}
+	};
+	
+	private ActionListener filePushButtonActionListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			try {
+				
+				if(FSRemoteFileTree.getExtension(serverJTreeSelection) == null) { // is a folder
+					System.out.println("selected folder:"+serverJTreeSelection.getPath());
+					System.out.println("selected fname :"+serverJTreeSelection.getName());
+				}
+				
+				client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+	};
+	
+	private ActionListener filePullButtonActionListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+		}
+	};
+	
+	private ActionListener fileDeleteButtonActionListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+		}
+	};
+	
+	TreeSelectionListener clientJTreeSelectionListener = new TreeSelectionListener() {
+		@Override
+		public void valueChanged(TreeSelectionEvent e) {
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) clientJTree.getLastSelectedPathComponent();
+			clientJTreeSelection = (FSRemoteFile) node.getUserObject();
+			//System.out.println("local file selected:" + clientJTreeSelection.getPath());
+			
+			updateCenterPanelButtons();
+		}
+	};
+	
+	TreeSelectionListener serverJTreeSelectionListener = new TreeSelectionListener() {
+		@Override
+		public void valueChanged(TreeSelectionEvent e) {
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) serverJTree.getLastSelectedPathComponent();
+			serverJTreeSelection = (FSRemoteFile) node.getUserObject();
+			//System.out.println("remote file selected:" + serverJTreeSelection.getPath());
+			
+			updateCenterPanelButtons();
 		}
 	};
 	
