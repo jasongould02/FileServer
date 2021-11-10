@@ -31,6 +31,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
 import jgould.fs.java.main.util.FSConstants;
+import jgould.fs.java.main.util.FSUtil;
 import jgould.fs.java.main.util.FSWorkspace;
 
 public class ClientView {
@@ -64,7 +65,7 @@ public class ClientView {
     private JPanel centerPanel;
     private JButton filePushButton;
     private JButton filePullButton;
-    private JButton fileDeleteButton;
+   // private JButton fileDeleteButton;
     
     private GridBagLayout layout;
     
@@ -130,12 +131,13 @@ public class ClientView {
 		JScrollPane serverJTreeScrollPane = new JScrollPane(this.serverJTree);
         serverJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         serverJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        serverJTreeScrollPane.setBorder(BorderFactory.createLineBorder(Color.black));
+        //serverJTreeScrollPane.setBorder(BorderFactory.createLineBorder(Color.black));
 		
 		
 		clientJTree = this.createJTree(clientJTree, FSRemoteFileTree.searchDirectory(client.getFSWorkspace().getWorkspace()), clientJTreeRoot, clientJTreeModel);
 		JScrollPane clientJTreeScrollPane = new JScrollPane(this.clientJTree);
-		clientJTreeScrollPane.setMinimumSize(new Dimension(200, 600));
+		clientJTreeScrollPane.setMinimumSize(new Dimension(500, 100));
+		//clientJTreeScrollPane.setMinimumSize(new Dimension(200, 600));
         clientJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         clientJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
@@ -194,19 +196,19 @@ public class ClientView {
 		
 		filePushButton = new JButton("Upload File");
 		filePullButton = new JButton("Download File");
-		fileDeleteButton = new JButton("Delete File");
+		//fileDeleteButton = new JButton("Delete File");
 		
 		filePushButton.setEnabled(false);
 		filePullButton.setEnabled(false);
-		fileDeleteButton.setEnabled(false);
+		//fileDeleteButton.setEnabled(false);
 		
 		filePushButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		filePullButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-		fileDeleteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		//fileDeleteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		filePushButton.addActionListener(filePushButtonActionListener);
 		filePullButton.addActionListener(filePullButtonActionListener);
-		fileDeleteButton.addActionListener(fileDeleteButtonActionListener);
+		//fileDeleteButton.addActionListener(fileDeleteButtonActionListener);
 		
 		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 		
@@ -227,7 +229,7 @@ public class ClientView {
 		} else {
 			filePushButton.setEnabled(false);
 			filePullButton.setEnabled(false);
-			fileDeleteButton.setEnabled(false);
+			//fileDeleteButton.setEnabled(false);
 		}
 	}
 	
@@ -389,11 +391,11 @@ public class ClientView {
 		}
 	};
 	
-	private ActionListener fileDeleteButtonActionListener = new ActionListener() {
+	/*private ActionListener fileDeleteButtonActionListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 		}
-	};
+	};*/
 	
 	TreeSelectionListener clientJTreeSelectionListener = new TreeSelectionListener() {
 		@Override
