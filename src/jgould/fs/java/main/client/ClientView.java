@@ -223,7 +223,7 @@ public class ClientView {
 		if(clientJTreeSelection != null && serverJTreeSelection != null) {
 			filePushButton.setEnabled(true);
 			filePullButton.setEnabled(true);
-			fileDeleteButton.setEnabled(true);
+			//fileDeleteButton.setEnabled(true);
 		} else {
 			filePushButton.setEnabled(false);
 			filePullButton.setEnabled(false);
@@ -341,12 +341,32 @@ public class ClientView {
 		public void actionPerformed(ActionEvent e) {
 			try {
 				
-				if(FSRemoteFileTree.getExtension(serverJTreeSelection) == null) { // is a folder
-					System.out.println("selected folder:"+serverJTreeSelection.getPath());
-					System.out.println("selected fname :"+serverJTreeSelection.getName());
+				if(FSRemoteFileTree.getExtension(clientJTreeSelection) == null) { 											// sending a folder
+					
+					//write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(src.getName()));
+					//String dest = destination + File.separator + src.getName(); 
+					
+					if(FSRemoteFileTree.getExtension(serverJTreeSelection) == null) { 										// sending directory to a folder
+						String destination = serverJTreeSelection.getPath() + File.separator + clientJTreeSelection.getName();
+						System.out.println("sending folder to folder:" + clientJTreeSelection.getPath() + "\t destination:" + destination);
+						client.sendDirectory(new File(clientJTreeSelection.getPath()), destination, destination);
+					} else { 																								// sending file to parent folder of a file
+						String destination = FSUtil.getParent(serverJTreeSelection.getPath()) + File.separator + clientJTreeSelection.getName();
+						System.out.println("Sending folder to file, parentfolder ==" + destination);
+						client.sendDirectory(new File(clientJTreeSelection.getPath()), destination, destination);
+					}
+				} else { 																									// sending a regular file
+					if(FSRemoteFileTree.getExtension(serverJTreeSelection) == null) { 										// sending file to a folder
+						String destination = serverJTreeSelection.getPath();
+						System.out.println("sending file to folder:" + clientJTreeSelection.getPath() + "\t destination:" + destination);
+						client.sendFile(new File(clientJTreeSelection.getPath()), destination);
+					} else { 																								// sending file to parent folder of a file
+						String destination = FSUtil.getParent(serverJTreeSelection.getPath());
+						System.out.println("Sending file to file, parentfolder ==" + destination);
+						client.sendFile(new File(clientJTreeSelection.getPath()), destination);
+					}
 				}
 				
-				client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
@@ -356,6 +376,16 @@ public class ClientView {
 	private ActionListener filePullButtonActionListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			try {
+				/*if(FSRemoteFileTree.getExtension(serverJTreeSelection) == null) { // is a folder
+					//System.out.println("selected folder:"+serverJTreeSelection.getPath());
+					//System.out.println("selected fname :"+serverJTreeSelection.getName());
+				}*/
+				
+				client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}
 	};
 	

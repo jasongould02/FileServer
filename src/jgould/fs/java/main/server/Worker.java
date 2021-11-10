@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
 
@@ -58,6 +59,29 @@ public class Worker implements Runnable {
 				string_listing += s + ":";
 			}
 			sendListing(string_listing);
+		} else if(input.startsWith(FSConstants.FILE)) {
+			String[] split = input.split(FSConstants.DELIMITER);
+			//System.out.println("command length:" + split.length);
+			if(split.length != 5) {
+				System.out.println("Error in command received");
+				return;
+			}
+			
+			String destination = split[1];
+			String name = split[2];
+			String size = split[3]; // Not actually needed since the byte[] data is separated using ':' and included with the string of data sent over the server's worker OutputStream 
+			String string_data = split[4];
+			
+			byte[] data = Base64.getDecoder().decode(string_data);
+			Server.getFSWorkspace().addFile(name, data, destination, StandardOpenOption.CREATE);
+		} else if(input.startsWith(FSConstants.FOLDER)) {
+			String[] split = input.split(FSConstants.DELIMITER);
+			System.out.println("adding dir");
+			
+			String destination = split[1];
+			String folderName = split[2];
+			
+			Server.getFSWorkspace().addDirectory(folderName, destination);
 		}
 	}
 	

@@ -1,6 +1,7 @@
 package jgould.fs.java.main.client;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -186,6 +187,25 @@ public class Client implements Runnable {
 			remotePathList.addAll(listing);
 			this.setRemoteFileTree(FSRemoteFileTree.constructRemoteFileTree(listing));
 		}
+	}
+	
+	protected void sendDirectory(File file, final String originalDestination, String destination) throws IOException {
+		for(File f : file.listFiles()) {
+			if(f.isDirectory()) {
+				//System.out.println("now sending to new folder:" + destination + ":" + f.getName());
+				write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(f.getName()));
+				//System.out.println("moving to:"+destination+f.getName());
+				sendDirectory(f, originalDestination, destination + File.separator + f.getName());
+			} else {
+				sendFile(f, destination);
+			}
+		}
+	}
+	
+	protected void sendFile(File src, String destination) throws IOException {
+		byte[] data = FSUtil.getFileBytes(src);
+		String string_data = Base64.getEncoder().encodeToString(data);
+		write(FSConstants.FILE + ":" + destination + ":" + src.getName() + ":" + data.length + ":" + string_data);
 	}
 
 	@Override
