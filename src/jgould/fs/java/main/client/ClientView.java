@@ -98,7 +98,7 @@ public class ClientView {
 	public ClientView(Client client) {
 		client.setFSWorkspace("workspace/");
 		this.client = client;
-		File f = new File("trash");
+		//File f = new File("trash");
 		FSConstants.setTrashBin("trash" + File.separator);
 		
 		frame = new JFrame(TITLE);
@@ -126,7 +126,6 @@ public class ClientView {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		//serverJTree = this.createJTree(serverJTree, client.getRemotePathList(), serverJTreeRoot, serverJTreeModel);
 		serverJTree = this.createJTree(serverJTree, this.client.getRemotePathList(), serverJTreeRoot, serverJTreeModel);
 		JScrollPane serverJTreeScrollPane = new JScrollPane(this.serverJTree);
         serverJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -137,7 +136,6 @@ public class ClientView {
 		clientJTree = this.createJTree(clientJTree, FSRemoteFileTree.searchDirectory(client.getFSWorkspace().getWorkspace()), clientJTreeRoot, clientJTreeModel);
 		JScrollPane clientJTreeScrollPane = new JScrollPane(this.clientJTree);
 		clientJTreeScrollPane.setMinimumSize(new Dimension(500, 100));
-		//clientJTreeScrollPane.setMinimumSize(new Dimension(200, 600));
         clientJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         clientJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
@@ -185,8 +183,6 @@ public class ClientView {
 		
 		clientJTree.addTreeSelectionListener(clientJTreeSelectionListener);
 		serverJTree.addTreeSelectionListener(serverJTreeSelectionListener);
-		//System.out.println("\n");
-		//System.out.println(getClient().getFSWorkspace().listContents());
 		
 		this.refreshServerTreeModel();
 	}
@@ -214,7 +210,7 @@ public class ClientView {
 		
 		centerPanel.add(filePushButton);
 		centerPanel.add(filePullButton);
-		centerPanel.add(fileDeleteButton);
+		//centerPanel.add(fileDeleteButton);
 		
 		centerPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
 		
@@ -326,15 +322,12 @@ public class ClientView {
 			serverWorkspaceRootFile = FSRemoteFileTree.constructRemoteFileTree(client.getRemotePathList());
 			setServerTreeModel(new DefaultTreeModel(generateTreeNode(serverWorkspaceRootFile, null)));
 			setClientTreeModel();
-			//FSRemoteFileTree.printFSRemoteFileTree(serverWorkspaceRootFile, 0);
-			//refreshServerTreeModel();
 		}
 	};
 	
 	private ActionListener connectActionListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			//client.connectToServer(ipAddress, portNumber, timeout)
 		}
 	};
 	
@@ -344,10 +337,6 @@ public class ClientView {
 			try {
 				
 				if(FSRemoteFileTree.getExtension(clientJTreeSelection) == null) { 											// sending a folder
-					
-					//write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(src.getName()));
-					//String dest = destination + File.separator + src.getName(); 
-					
 					if(FSRemoteFileTree.getExtension(serverJTreeSelection) == null) { 										// sending directory to a folder
 						String destination = serverJTreeSelection.getPath() + File.separator + clientJTreeSelection.getName();
 						System.out.println("sending folder to folder:" + clientJTreeSelection.getPath() + "\t destination:" + destination);
@@ -379,23 +368,12 @@ public class ClientView {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
-				/*if(FSRemoteFileTree.getExtension(serverJTreeSelection) == null) { // is a folder
-					//System.out.println("selected folder:"+serverJTreeSelection.getPath());
-					//System.out.println("selected fname :"+serverJTreeSelection.getName());
-				}*/
-				
 				client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		}
 	};
-	
-	/*private ActionListener fileDeleteButtonActionListener = new ActionListener() {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-		}
-	};*/
 	
 	TreeSelectionListener clientJTreeSelectionListener = new TreeSelectionListener() {
 		@Override

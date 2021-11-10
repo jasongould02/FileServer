@@ -6,10 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
-
-import jgould.fs.java.main.client.FSRemoteFile;
 
 /**
  * NOTE: Workspace uses canonical paths as the arguments for the methods when passing String objects for paths.

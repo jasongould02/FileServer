@@ -154,7 +154,6 @@ public class Client implements Runnable {
 		System.out.println("received command:" + input);
 		if(input.startsWith(FSConstants.FILE)) {
 			String[] split = input.split(FSConstants.DELIMITER);
-			//System.out.println("command length:" + split.length);
 			if(split.length != 5) {
 				System.out.println("Error in command received");
 				return;
@@ -169,7 +168,6 @@ public class Client implements Runnable {
 			workspace.addFile(name, data, destination, StandardOpenOption.CREATE);
 		} else if(input.startsWith(FSConstants.FOLDER)) {
 			String[] split = input.split(FSConstants.DELIMITER);
-			
 			String destination = split[1];
 			String folderName = split[2];
 			
