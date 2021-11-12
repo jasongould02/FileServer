@@ -4,21 +4,25 @@ import java.awt.event.FocusListener;
 import java.util.ArrayList;
 
 import javax.swing.JTree;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 
-public class FSRemoteFileTree implements FSRemoteFileTreeListener {
+import jgould.fs.java.main.util.FSConstants;
+
+public class FSRemoteFileTree {
 
     private JTree tree = null;
     private DefaultMutableTreeNode rootNode = null;
     private DefaultTreeModel treeModel = null;
     
-    private FSRemoteFile currentFile = null;
-    
     public FSRemoteFileTree(ArrayList<String> pathList) {
-    	tree =createJTree(tree, pathList, rootNode, treeModel);
+    	tree = createJTree(tree, pathList, rootNode, treeModel);
+    	tree.setRowHeight(25);
     }
     
     private DefaultMutableTreeNode generateTreeNode(FSRemoteFile rootFile, DefaultMutableTreeNode parent) {
@@ -61,20 +65,24 @@ public class FSRemoteFileTree implements FSRemoteFileTreeListener {
 	
 	// Use FSRemoteFileTreeUtil.constructRemoteFileTree(ArrayList<String> paths) to construct a tree of FSRemoteFile objects, then tree structure will then be placed into DefaultMutableTreeNodes and into the JTree
 	protected void refreshTreeModel(FSRemoteFile rootFile) {
-		TreeSelectionListener[] listeners = getTree().getTreeSelectionListeners();
-		for(TreeSelectionListener l : getTree().getTreeSelectionListeners()) {
-			getTree().removeTreeSelectionListener(l);
-		}
-		//getTree().removeTreeSelectionListener(getTree().getTreeSelectionListeners()[0]);
+		DefaultTreeModel model = ((DefaultTreeModel) getTree().getModel());
 		
-		//DefaultMutableTreeNode rootNode = generateTreeNode(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())), null);
-		DefaultMutableTreeNode rootNode = generateTreeNode(rootFile, null);
-		getTree().setModel(new DefaultTreeModel(rootNode));
-		//clientJTree.addTreeSelectionListener(clientJTreeSelectionListener);
-		for(TreeSelectionListener l : listeners) {
-			getTree().addTreeSelectionListener(l);
+		// Save which nodes are expanded;
+		String expandedNodes = "";
+		for(int i=0;i < getTree().getRowCount(); i++) {
+			if(tree.isExpanded(i)) {
+				expandedNodes += i + FSConstants.DELIMITER;
+			}
 		}
-		((DefaultTreeModel) getTree().getModel()).reload();
+		
+		DefaultMutableTreeNode rootNode = generateTreeNode(rootFile, null);
+		model.setRoot(rootNode); // ((DefaultTreeModel) getTree().getModel()).setRoot(rootNode);
+
+		// Re-expand nodes that were open before refreshing tree
+		for(String s : expandedNodes.split(FSConstants.DELIMITER)) {
+			tree.expandRow(Integer.parseInt(s));
+		}
+		
 		getTree().validate();
 		getTree().revalidate();
 	}
@@ -95,11 +103,6 @@ public class FSRemoteFileTree implements FSRemoteFileTreeListener {
 		return tree.getModel();
 	}
 
-	@Override
-	public void remoteFileTreeChange() {
-		
-	}
-    
 	/*TreeSelectionListener treeSelectionListener = new TreeSelectionListener() {
 		@Override
 		public void valueChanged(TreeSelectionEvent e) {
