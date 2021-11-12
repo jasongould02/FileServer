@@ -47,7 +47,7 @@ public class ClientView {
 	private JMenu fileMenu;
 	private JMenuItem connectItem;
 	
-	private JButton requestFilesButton;
+	private JButton refreshTreesButton;
 	
 	// Client File Tree
 	//private DefaultMutableTreeNode clientJTreeRoot = null;
@@ -116,9 +116,7 @@ public class ClientView {
 		layout = new GridBagLayout();
 		mainPanel.setLayout(layout);
 		
-		requestFilesButton = new JButton("Request");
 		
-		requestFilesButton.addActionListener(requestActionListener);
 		
 		try {
 			this.client.sendDirectoryListingRequest();
@@ -199,24 +197,29 @@ public class ClientView {
 		
 		filePushButton = new JButton("Upload File");
 		filePullButton = new JButton("Download File");
+		refreshTreesButton = new JButton("Refresh Tree");
 		//fileDeleteButton = new JButton("Delete File");
 		
 		filePushButton.setEnabled(false);
 		filePullButton.setEnabled(false);
+		refreshTreesButton.setEnabled(true);
 		//fileDeleteButton.setEnabled(false);
 		
 		filePushButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		filePullButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		refreshTreesButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		//fileDeleteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		filePushButton.addActionListener(filePushButtonActionListener);
 		filePullButton.addActionListener(filePullButtonActionListener);
+		refreshTreesButton.addActionListener(requestActionListener);
 		//fileDeleteButton.addActionListener(fileDeleteButtonActionListener);
 		
 		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 		
 		centerPanel.add(filePushButton);
 		centerPanel.add(filePullButton);
+		centerPanel.add(refreshTreesButton);
 		//centerPanel.add(fileDeleteButton);
 		
 		centerPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
