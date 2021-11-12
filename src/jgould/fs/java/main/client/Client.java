@@ -5,12 +5,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
@@ -29,6 +29,9 @@ public class Client implements Runnable {
 	private Thread thread = null;
 	private boolean running = true;
 	
+	private ClientView owner; // this feels wrong
+	
+	private ArrayList<FSRemoteFileTreeListener> fsRemoteFileTreeListeners = new ArrayList<FSRemoteFileTreeListener>();
 	
 	public static void main(String[] args) {
 		try {
@@ -165,6 +168,7 @@ public class Client implements Runnable {
 			String string_data = split[4];
 			
 			byte[] data = Base64.getDecoder().decode(string_data);
+			System.out.println("writing file:" + name + "\tdest:" + destination);
 			workspace.addFile(name, data, destination, StandardOpenOption.CREATE);
 		} else if(input.startsWith(FSConstants.FOLDER)) {
 			String[] split = input.split(FSConstants.DELIMITER);
@@ -173,17 +177,20 @@ public class Client implements Runnable {
 			
 			workspace.addDirectory(folderName, destination);
 		} else if(input.startsWith(FSConstants.DIRECTORY_LIST)) {
-			System.out.println("received listing:");
+			//System.out.println("received listing:");
 			ArrayList<String> listing = new ArrayList<String>();
 			String[] split = input.split(FSConstants.DELIMITER);
 			
 			for(int i = 1; i < split.length; i++) {
 				listing.add(split[i]);
-				System.out.println("listing:"+split[i]);
+				//System.out.println("listing:"+split[i]);
 			}
 			this.remotePathList.clear();
 			remotePathList.addAll(listing);
-			this.setRemoteFileTree(FSRemoteFileTree.constructRemoteFileTree(listing));
+			this.setRemoteFileTree(FSRemoteFileTreeUtil.constructRemoteFileTree(listing));
+		}
+		for(FSRemoteFileTreeListener l : fsRemoteFileTreeListeners) {
+			l.remoteFileTreeChange();
 		}
 	}
 	
@@ -289,4 +296,7 @@ public class Client implements Runnable {
 		return remotePathList;
 	}
 	
+	public void addFSRemoteFileTreeListener(FSRemoteFileTreeListener ls) {
+		this.fsRemoteFileTreeListeners.add(ls);
+	}
 }

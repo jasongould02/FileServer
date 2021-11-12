@@ -1,120 +1,128 @@
 package jgould.fs.java.main.client;
 
-import java.io.File;
+import java.awt.event.FocusListener;
 import java.util.ArrayList;
-import java.util.Collections;
 
-public class FSRemoteFileTree {
+import javax.swing.JTree;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
 
-	private FSRemoteFileTree() {}
-	
-	/**
-	 * Will search given directory and all sub-directories. All files and directories will be returned in an ArrayList
-	 * 
-	 * @param file
-	 * @return an unsorted ArrayList<{@link String}> of paths found in directory and sub-directories
-	 */
-	public static ArrayList<String> searchDirectory(File file) {
-		System.out.println("searchDirectory");
-		ArrayList<String> list = new ArrayList<String>();
-		if(file != null) {
-			for (File f : file.listFiles()) {
-				list.add(f.getPath());
-				System.out.println(f.getPath());
+public class FSRemoteFileTree implements FSRemoteFileTreeListener {
 
-				if (f.isDirectory()) {
-					ArrayList<String> temp = searchDirectory(f);
-					//list.addAll(searchDirectory(f));
-					list.addAll(temp);
+    private JTree tree = null;
+    private DefaultMutableTreeNode rootNode = null;
+    private DefaultTreeModel treeModel = null;
+    
+    private FSRemoteFile currentFile = null;
+    
+    public FSRemoteFileTree(ArrayList<String> pathList) {
+    	tree =createJTree(tree, pathList, rootNode, treeModel);
+    }
+    
+    private DefaultMutableTreeNode generateTreeNode(FSRemoteFile rootFile, DefaultMutableTreeNode parent) {
+		if(rootFile != null && parent != null) {
+			for(FSRemoteFile file : rootFile.getChildren()) {
+				DefaultMutableTreeNode child = new DefaultMutableTreeNode(file);
+				parent.add(child);
+				if(file.getChildren().size() != 0) {
+					generateTreeNode(file, child);
 				}
 			}
+		} else {
+			if(parent == null) { // for creating first node
+				DefaultMutableTreeNode newParent = new DefaultMutableTreeNode(rootFile);
+				return generateTreeNode(rootFile, newParent);
+			}
 		}
-		return list;
+		return parent;
 	}
 	
-	/**
-	 * Creates a FSRemoteFile tree from list of paths 
-	 * 
-	 * @param pathList
-	 * @return
-	 */
-	public static FSRemoteFile constructRemoteFileTree(ArrayList<String> pathList) {
-		Collections.sort(pathList);
-		FSRemoteFile rootFile = new FSRemoteFile();
+	//private FSRemoteFile serverWorkspaceRootFile;
+	private JTree createJTree(JTree tree, ArrayList<String> pathList, DefaultMutableTreeNode root, DefaultTreeModel treeModel) {
+		if(pathList != null) {
+			//serverWorkspaceRootFile = FSRemoteFileTreeUtil.constructRemoteFileTree(pathList);
+			//root = generateTreeNode(serverWorkspaceRootFile, null);
+			root = generateTreeNode(FSRemoteFileTreeUtil.constructRemoteFileTree(pathList), null);
+			treeModel = new DefaultTreeModel(root);
+			
+			tree = new JTree(treeModel);
+			tree.setShowsRootHandles(true);
+			return tree;
+		} else {
+			if(tree == null) {
+				tree = new JTree();
+				tree.setShowsRootHandles(true);
+			}
+			return tree;
+		}
+	}
+	
+	// Use FSRemoteFileTreeUtil.constructRemoteFileTree(ArrayList<String> paths) to construct a tree of FSRemoteFile objects, then tree structure will then be placed into DefaultMutableTreeNodes and into the JTree
+	protected void refreshTreeModel(FSRemoteFile rootFile) {
+		TreeSelectionListener[] listeners = getTree().getTreeSelectionListeners();
+		for(TreeSelectionListener l : getTree().getTreeSelectionListeners()) {
+			getTree().removeTreeSelectionListener(l);
+		}
+		//getTree().removeTreeSelectionListener(getTree().getTreeSelectionListeners()[0]);
 		
-		for(String path : pathList) {
-			String[] split = path.split("\\\\");
-			
-			// DEBUG
-			/*for(String s : split) {
-				System.out.print(s + ",");
-			} System.out.print("\n");*/
-			
-			int splitLength = split.length;
-			FSRemoteFile currNode = rootFile;
-			
-			for(int i=0;i < splitLength; i++) {
-				if(currNode.getName() == null) {
-					currNode.setName(split[i]);
-					//rootFile = new FSRemoteFile(split[i]);
-					currNode = rootFile;
-					//continue;
-				}
-				
-				if(currNode.getName().equals(split[i])) {
-					if((i+1) < splitLength) {
-						if(currNode.hasChild(split[i+1])) {
-							currNode = currNode.getChild(split[i+1]);
-							continue;
-						} else {
-							FSRemoteFile newNode = new FSRemoteFile(split[i+1]);
-							currNode.addChild(newNode);
-							currNode = currNode.getChild(split[i+1]);
-						}
-					}
-				}
-			}
-			currNode.setPath(path);
+		//DefaultMutableTreeNode rootNode = generateTreeNode(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())), null);
+		DefaultMutableTreeNode rootNode = generateTreeNode(rootFile, null);
+		getTree().setModel(new DefaultTreeModel(rootNode));
+		//clientJTree.addTreeSelectionListener(clientJTreeSelectionListener);
+		for(TreeSelectionListener l : listeners) {
+			getTree().addTreeSelectionListener(l);
 		}
-		//System.out.println("finished constructing new tree.");
-		return rootFile;
+		((DefaultTreeModel) getTree().getModel()).reload();
+		getTree().validate();
+		getTree().revalidate();
 	}
 	
-	/**
-	 * Returns file extension, if the given file name has no extension then null is returned
-	 * @param filename the name of a file {@link FSRemoteFile#getName()}
-	 * @return file extension
-	 */
-	public static String getExtension(String filename) { // Technically FSRemoteFile.getPath() will also work here
-		if(filename != null) {
-			if(filename.contains(".")) {
-				return filename.substring(filename.lastIndexOf("."));
-			}
-		}
-		return null;
+	public void addTreeSelectionListener(TreeSelectionListener listener) {
+		this.tree.addTreeSelectionListener(listener);
 	}
 	
-	/**
-	 * Calls {@link FSRemoteFileTree#getExtension(String)}
-	 * @param f
-	 * @return file extension
-	 */
-	public static String getExtension(FSRemoteFile file) {
-		return getExtension(file.getName());
+	public void addFocusListener(FocusListener listener) {
+		this.tree.addFocusListener(listener);
 	}
 	
-	public static void printFSRemoteFileTree(FSRemoteFile root, int depth) {
-		if(root != null) {
-			if(root.hasChildren()) {
-				for(FSRemoteFile c : root.getChildren()) {
-					for(int i=0; i < depth; i++) {
-						System.out.print(" ");
-					}
-					System.out.println(c.getName() + " > " + c.getPath());
-					printFSRemoteFileTree(c, depth + 1);
-				}
-			}
-		}
+	public JTree getTree() {
+		return tree;
 	}
+	
+	public TreeModel getTreeModel() {
+		return tree.getModel();
+	}
+
+	@Override
+	public void remoteFileTreeChange() {
+		
+	}
+    
+	/*TreeSelectionListener treeSelectionListener = new TreeSelectionListener() {
+		@Override
+		public void valueChanged(TreeSelectionEvent e) {
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) clientJTree.getLastSelectedPathComponent();
+			clientJTreeSelection = (FSRemoteFile) node.getUserObject();
+			//System.out.println("local file selected:" + clientJTreeSelection.getPath());
+			
+			updateCenterPanelButtons();
+		}
+	};*/
+	
+	/*private FocusListener treeFocusListener = new FocusListener() {
+		@Override
+		public void focusGained(FocusEvent e) {
+			if(e.getComponent() != null) {
+				System.out.println("e.getComponent == " + e.getComponent().getName()+ e.getComponent().getComponentListeners().length);
+			}
+			System.out.println("selected:isTemporary()" +e.isTemporary());
+		}
+		@Override
+		public void focusLost(FocusEvent e) {
+			System.out.println("selected:isTemporary()" +e.isTemporary());
+		}
+	};*/
 	
 }
