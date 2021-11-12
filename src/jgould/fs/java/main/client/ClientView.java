@@ -134,32 +134,42 @@ public class ClientView {
 		//clientJTree = this.createJTree(clientJTree, FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace()), clientJTreeRoot, clientJTreeModel);
         clientTree = new FSRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace()));
 		JScrollPane clientJTreeScrollPane = new JScrollPane(clientTree.getTree());
-		clientJTreeScrollPane.setMinimumSize(new Dimension(500, 100));
+		clientJTreeScrollPane.setMinimumSize(new Dimension(1000, 100));
         clientJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         clientJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         
         GridBagConstraints c = new GridBagConstraints();
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        
         c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 0;
         c.gridy = 0;
         mainPanel.add(serverJTreeScrollPane, c);
         
         c.fill = GridBagConstraints.NONE;
+        c.weightx = 0.5;
+        c.weighty = 0.5;
         c.gridx = 1;
         c.gridy = 0;
-        mainPanel.add(createCenterPanel());
+        mainPanel.add(createCenterPanel(), c);
         
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
         c.gridx = 2;
         c.gridy = 0;
 		mainPanel.add(clientJTreeScrollPane, c);
 		
-		c.fill = GridBagConstraints.HORIZONTAL;
+		/*c.fill = GridBagConstraints.HORIZONTAL;
         c.gridx = 3;
-        c.gridy = 0;
-		mainPanel.add(requestFilesButton, c);
+        c.gridy = 0;*/
+        /*requestFilesButton = new JButton("Request");
+		requestFilesButton.addActionListener(requestActionListener);
+		mainPanel.add(requestFilesButton, c);*/
 		
 		frame.add(mainPanel);
+		mainPanel.setMinimumSize(mainPanel.getSize());
 		
 		frame.setVisible(true);
 
@@ -194,6 +204,7 @@ public class ClientView {
 	
 	private JPanel createCenterPanel() {
 		centerPanel = new JPanel();
+		centerPanel.setMinimumSize(new Dimension(200, 200));
 		
 		filePushButton = new JButton("Upload File");
 		filePullButton = new JButton("Download File");
