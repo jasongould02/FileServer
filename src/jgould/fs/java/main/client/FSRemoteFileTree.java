@@ -1,16 +1,15 @@
 package jgould.fs.java.main.client;
 
 import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
 import javax.swing.JTree;
-import javax.swing.event.TreeModelEvent;
-import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
 
 import jgould.fs.java.main.util.FSConstants;
 
@@ -81,8 +80,10 @@ public class FSRemoteFileTree {
 		model.setRoot(rootNode); // ((DefaultTreeModel) getTree().getModel()).setRoot(rootNode);
 
 		// Re-expand nodes that were open before refreshing tree
-		for(String s : expandedNodes.split(FSConstants.DELIMITER)) {
-			tree.expandRow(Integer.parseInt(s));
+		if(!expandedNodes.equals("")) {
+			for(String s : expandedNodes.split(FSConstants.DELIMITER)) {
+				tree.expandRow(Integer.parseInt(s));
+			}
 		}
 		
 		getTree().validate();
@@ -97,6 +98,10 @@ public class FSRemoteFileTree {
 		this.tree.addFocusListener(listener);
 	}
 	
+	public void addMouseListener(MouseListener listener) {
+		this.tree.addMouseListener(listener);
+	}
+	
 	public JTree getTree() {
 		return tree;
 	}
@@ -105,29 +110,6 @@ public class FSRemoteFileTree {
 		return tree.getModel();
 	}
 
-	/*TreeSelectionListener treeSelectionListener = new TreeSelectionListener() {
-		@Override
-		public void valueChanged(TreeSelectionEvent e) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) clientJTree.getLastSelectedPathComponent();
-			clientJTreeSelection = (FSRemoteFile) node.getUserObject();
-			//System.out.println("local file selected:" + clientJTreeSelection.getPath());
-			
-			updateCenterPanelButtons();
-		}
-	};*/
 	
-	/*private FocusListener treeFocusListener = new FocusListener() {
-		@Override
-		public void focusGained(FocusEvent e) {
-			if(e.getComponent() != null) {
-				System.out.println("e.getComponent == " + e.getComponent().getName()+ e.getComponent().getComponentListeners().length);
-			}
-			System.out.println("selected:isTemporary()" +e.isTemporary());
-		}
-		@Override
-		public void focusLost(FocusEvent e) {
-			System.out.println("selected:isTemporary()" +e.isTemporary());
-		}
-	};*/
 	
 }
