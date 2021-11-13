@@ -50,15 +50,9 @@ public class ClientView {
 	private JButton refreshTreesButton;
 	
 	// Client File Tree
-	//private DefaultMutableTreeNode clientJTreeRoot = null;
-    //private DefaultTreeModel clientJTreeModel = null;
-    //private JTree clientJTree = null;
     private FSRemoteFile clientJTreeSelection = null;
     private FSRemoteFileTree clientTree = null;
     // Server File Tree
-    //private DefaultMutableTreeNode serverJTreeRoot = null;
-    //private DefaultTreeModel serverJTreeModel = null;
-    //private JTree serverJTree = null;
     private FSRemoteFile serverJTreeSelection = null;
     private FSRemoteFileTree serverTree = null;
     
@@ -116,22 +110,17 @@ public class ClientView {
 		layout = new GridBagLayout();
 		mainPanel.setLayout(layout);
 		
-		
-		
 		try {
 			this.client.sendDirectoryListingRequest();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		//serverJTree = this.createJTree(serverJTree, this.client.getRemotePathList(), serverJTreeRoot, serverJTreeModel);
+		
 		serverTree = new FSRemoteFileTree(client.getRemotePathList());
 		JScrollPane serverJTreeScrollPane = new JScrollPane(serverTree.getTree());
         serverJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         serverJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        //serverJTreeScrollPane.setBorder(BorderFactory.createLineBorder(Color.black));
 		
-		
-		//clientJTree = this.createJTree(clientJTree, FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace()), clientJTreeRoot, clientJTreeModel);
         clientTree = new FSRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace()));
 		JScrollPane clientJTreeScrollPane = new JScrollPane(clientTree.getTree());
 		clientJTreeScrollPane.setMinimumSize(new Dimension(1000, 100));
@@ -181,25 +170,18 @@ public class ClientView {
 			}
 		}
 		
-		//serverJTree.setName("serverJTree");
-		//clientJTree.setName("clientJTree");
-		//serverJTree.addFocusListener(serverJTreeFocusListener);
-		//clientJTree.addFocusListener(clientJTreeFocusListener);
-		clientTree.addFocusListener(clientJTreeFocusListener);
-		serverTree.addFocusListener(serverJTreeFocusListener);
-		
-		//serverJTree.setBorder(new EmptyBorder(0,10,0,10));
-		//clientJTree.setBorder(new EmptyBorder(0,10,0,10));
+		serverTree.getTree().setBorder(new EmptyBorder(0,10,0,10));
 		clientTree.getTree().setBorder(new EmptyBorder(0,10,0,10));
 		
-		//clientJTree.addTreeSelectionListener(clientJTreeSelectionListener);
-		//serverJTree.addTreeSelectionListener(serverJTreeSelectionListener);
-		clientTree.addTreeSelectionListener(clientJTreeSelectionListener);
-		serverTree.addTreeSelectionListener(serverJTreeSelectionListener);
-		
+		clientTree.addFocusListener(clientJTreeFocusListener);
+		serverTree.addFocusListener(serverJTreeFocusListener);
+		//clientTree.addTreeSelectionListener(clientJTreeSelectionListener);
+		//serverTree.addTreeSelectionListener(serverJTreeSelectionListener);
+		clientTree.addMouseListener(clientTreeMouseListener);
+		serverTree.addMouseListener(serverTreeMouseListener);
+		this.client.addFSRemoteFileTreeListener(fsRemoteFileTreeListener);
 		//this.refreshServerTreeModel();
 		serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
-		this.client.addFSRemoteFileTreeListener(fsRemoteFileTreeListener);
 	}
 	
 	private JPanel createCenterPanel() {
@@ -253,83 +235,6 @@ public class ClientView {
 	public Client getClient() {
 		return client;
 	}
-	
-	@Deprecated //TODO: Remove before FSRemoteFileTree refactor (or is it a decouple?)
-	private DefaultMutableTreeNode generateTreeNode(FSRemoteFile rootFile, DefaultMutableTreeNode parent) {
-		if(rootFile != null && parent != null) {
-			for(FSRemoteFile file : rootFile.getChildren()) {
-				DefaultMutableTreeNode child = new DefaultMutableTreeNode(file);
-				parent.add(child);
-				if(file.getChildren().size() != 0) {
-					generateTreeNode(file, child);
-				}
-			}
-		} else {
-			if(parent == null) { // for creating first node
-				DefaultMutableTreeNode newParent = new DefaultMutableTreeNode(rootFile);
-				return generateTreeNode(rootFile, newParent);
-			}
-		}
-		return parent;
-	}
-	
-	private FSRemoteFile serverWorkspaceRootFile;
-	@Deprecated // TODO: Remove before FSRemoteFileTree refactor (or is it a decouple?)
-	private JTree createJTree(JTree tree, ArrayList<String> pathList, DefaultMutableTreeNode root, DefaultTreeModel treeModel) {
-		if(pathList != null) {
-			serverWorkspaceRootFile = FSRemoteFileTreeUtil.constructRemoteFileTree(pathList);
-			root = generateTreeNode(serverWorkspaceRootFile, null);
-			treeModel = new DefaultTreeModel(root);
-			
-			tree = new JTree(treeModel);
-			tree.setShowsRootHandles(true);
-			return tree;
-		} else {
-			if(tree == null) {
-				tree = new JTree();
-				tree.setShowsRootHandles(true);
-			}
-			return tree;
-		}
-	}
-	
-	/*protected void setServerTreeModel(DefaultTreeModel treeModel) {
-		this.serverJTree.setModel(treeModel);
-		this.serverJTree.validate();
-		this.serverJTree.revalidate();
-	}*/
-	
-	/*protected void refreshClientTreeModel() {
-		this.clientJTree.removeTreeSelectionListener(clientJTreeSelectionListener);
-		
-		DefaultMutableTreeNode root = generateTreeNode(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())), null);
-		this.clientJTree.setModel(new DefaultTreeModel(root));
-		this.clientJTree.addTreeSelectionListener(clientJTreeSelectionListener);
-		this.clientJTree.validate();
-		this.clientJTree.revalidate();
-	}*/
-	
-	/*protected void refreshServerTreeModel() {
-		if(client != null && client.isConnected()) {
-			try {
-				client.sendDirectoryListingRequest();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		((DefaultMutableTreeNode) ((DefaultTreeModel) this.serverJTree.getModel()).getRoot()).removeAllChildren();
-		((DefaultTreeModel) serverJTree.getModel()).reload();
-		
-		if(client.getRemotePathList() != null) {
-			serverWorkspaceRootFile = FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList());
-		}
-		serverJTree.setModel(new DefaultTreeModel(generateTreeNode(serverWorkspaceRootFile, null)));
-		((DefaultTreeModel) serverJTree.getModel()).reload();
-		serverJTree.revalidate();
-		mainPanel.revalidate();
-		System.out.println("finished refreshing tree");
-	}*/
 	
 	private ActionListener requestActionListener = new ActionListener() {
 		@Override
@@ -414,30 +319,7 @@ public class ClientView {
 		}
 	};
 	
-	TreeSelectionListener clientJTreeSelectionListener = new TreeSelectionListener() {
 		@Override
-		public void valueChanged(TreeSelectionEvent e) {
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) clientTree.getTree().getLastSelectedPathComponent();
-			if(node != null) {
-				clientJTreeSelection = (FSRemoteFile) node.getUserObject();
-			}
-			//System.out.println("local file selected:" + clientJTreeSelection.getPath());
-			
-			updateCenterPanelButtons();
-		}
-	};
-	
-	TreeSelectionListener serverJTreeSelectionListener = new TreeSelectionListener() {
-		@Override
-		public void valueChanged(TreeSelectionEvent e) {
-			//DefaultMutableTreeNode node = (DefaultMutableTreeNode) serverJTree.getLastSelectedPathComponent();
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) serverTree.getTree().getLastSelectedPathComponent();
-			if(node != null) {
-				serverJTreeSelection = (FSRemoteFile) node.getUserObject();
-			}
-			//System.out.println("remote file selected:" + serverJTreeSelection.getPath());
-			
-			updateCenterPanelButtons();
 		}
 	};
 	
@@ -488,6 +370,63 @@ public class ClientView {
 			System.out.println("called");
 			updateTrees();
 		}
+	};
+	
+	MouseListener clientTreeMouseListener = new MouseListener() {
+		@Override
+		public void mouseClicked(MouseEvent e) {}
+		@Override
+		public void mouseEntered(MouseEvent e) {}
+		@Override
+		public void mouseExited(MouseEvent e) {}
+		@Override
+		public void mousePressed(MouseEvent e) {}
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) clientTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
+			if(file != null && clientJTreeSelection != null) {
+				if(file.getPath().equals(clientJTreeSelection.getPath())) {
+					System.out.println("node is already selected, deselecting");
+					clearTreeSelections();
+					updateCenterPanelButtons();
+					return;
+				}
+			}
+			
+			if(file != null) {
+				clientJTreeSelection = file;
+			}
+			updateCenterPanelButtons();
+		}
+	};
+	
+	MouseListener serverTreeMouseListener = new MouseListener() {
+		@Override
+		public void mouseClicked(MouseEvent e) {}
+		@Override
+		public void mouseEntered(MouseEvent e) {}
+		@Override
+		public void mouseExited(MouseEvent e) {}
+		@Override
+		public void mousePressed(MouseEvent e) {}
+		@Override
+		public void mouseReleased(MouseEvent e) {
+			FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) serverTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
+			if(file != null && serverJTreeSelection != null) {
+				if(file.getPath().equals(serverJTreeSelection.getPath())) {
+					clearTreeSelections();
+					updateCenterPanelButtons();
+					return;
+				}
+			}
+			
+			if(file != null) {
+				serverJTreeSelection = file;
+			}
+			updateCenterPanelButtons();
+		}
 		
 	};
+	
+	
 }
