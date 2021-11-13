@@ -46,7 +46,7 @@ public class FSRemoteFileTree {
 	}
 	
 	//private FSRemoteFile serverWorkspaceRootFile;
-	private JTree createJTree(JTree tree, ArrayList<String> pathList, DefaultMutableTreeNode root, DefaultTreeModel treeModel) {
+	private synchronized JTree createJTree(JTree tree, ArrayList<String> pathList, DefaultMutableTreeNode root, DefaultTreeModel treeModel) {
 		if(pathList != null) {
 			//serverWorkspaceRootFile = FSRemoteFileTreeUtil.constructRemoteFileTree(pathList);
 			//root = generateTreeNode(serverWorkspaceRootFile, null);

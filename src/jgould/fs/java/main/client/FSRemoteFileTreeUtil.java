@@ -39,10 +39,12 @@ public class FSRemoteFileTreeUtil {
 	 * @return
 	 */
 	public static FSRemoteFile constructRemoteFileTree(ArrayList<String> pathList) {
-		Collections.sort(pathList);
+		ArrayList<String> temp = new ArrayList<String>(); // Have to place strings into a temporary ArrayList to sort to prevent concurrent modification
+		temp.addAll(pathList);
+		Collections.sort(temp);
 		FSRemoteFile rootFile = new FSRemoteFile();
 		
-		for(String path : pathList) {
+		for(String path : temp) {
 			String[] split = path.split("\\\\");
 			
 			// DEBUG
