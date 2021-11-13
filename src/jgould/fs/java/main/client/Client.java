@@ -131,6 +131,14 @@ public class Client implements Runnable {
 		write(FSConstants.REQUEST + FSConstants.DELIMITER + pathToFile + filename + FSConstants.DELIMITER + destination);
 	}
 	
+	protected void sendFileRemove(String pathToFile, String filename) throws IOException {
+		if(pathToFile.endsWith(filename)) {
+			filename = "";
+		}
+		pathToFile = FSUtil.checkDirectoryEnding(pathToFile);
+		write(FSConstants.REMOVE + FSConstants.DELIMITER + pathToFile + filename);
+	}
+	
 	/**
 	 * If the Client's writer is not null, this method will write the given string and append '\r\n'.
 	 * This method flushes after the String has been written
@@ -164,7 +172,7 @@ public class Client implements Runnable {
 			
 			String destination = split[1];
 			String name = split[2];
-			String size = split[3]; // Not actually needed since the byte[] data is separated using ':' and included with the string of data sent over the server's worker OutputStream 
+			//String size = split[3]; // Not actually needed since the byte[] data is separated using ':' and included with the string of data sent over the server's worker OutputStream 
 			String string_data = split[4];
 			
 			byte[] data = Base64.getDecoder().decode(string_data);

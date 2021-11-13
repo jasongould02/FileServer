@@ -8,9 +8,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.StandardCopyOption;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -20,13 +22,9 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTree;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
@@ -47,8 +45,6 @@ public class ClientView {
 	private JMenu fileMenu;
 	private JMenuItem connectItem;
 	
-	private JButton refreshTreesButton;
-	
 	// Client File Tree
     private FSRemoteFile clientJTreeSelection = null;
     private FSRemoteFileTree clientTree = null;
@@ -59,7 +55,8 @@ public class ClientView {
     private JPanel centerPanel;
     private JButton filePushButton;
     private JButton filePullButton;
-   // private JButton fileDeleteButton;
+    private JButton refreshTreesButton;
+    private JButton fileDeleteButton;
     
     private GridBagLayout layout;
     
@@ -191,29 +188,29 @@ public class ClientView {
 		filePushButton = new JButton("Upload File");
 		filePullButton = new JButton("Download File");
 		refreshTreesButton = new JButton("Refresh Tree");
-		//fileDeleteButton = new JButton("Delete File");
+		fileDeleteButton = new JButton("Delete File");
 		
 		filePushButton.setEnabled(false);
 		filePullButton.setEnabled(false);
+		fileDeleteButton.setEnabled(false);
 		refreshTreesButton.setEnabled(true);
-		//fileDeleteButton.setEnabled(false);
 		
 		filePushButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		filePullButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+		fileDeleteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		refreshTreesButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-		//fileDeleteButton.setAlignmentX(Component.CENTER_ALIGNMENT);
 		
 		filePushButton.addActionListener(filePushButtonActionListener);
 		filePullButton.addActionListener(filePullButtonActionListener);
+		fileDeleteButton.addActionListener(fileDeleteButtonActionListener);
 		refreshTreesButton.addActionListener(requestActionListener);
-		//fileDeleteButton.addActionListener(fileDeleteButtonActionListener);
 		
 		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 		
 		centerPanel.add(filePushButton);
 		centerPanel.add(filePullButton);
+		centerPanel.add(fileDeleteButton);
 		centerPanel.add(refreshTreesButton);
-		//centerPanel.add(fileDeleteButton);
 		
 		centerPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
 		
@@ -224,11 +221,15 @@ public class ClientView {
 		if(clientJTreeSelection != null && serverJTreeSelection != null) {
 			filePushButton.setEnabled(true);
 			filePullButton.setEnabled(true);
-			//fileDeleteButton.setEnabled(true);
+			fileDeleteButton.setEnabled(false);
+		} else if(clientJTreeSelection != null || serverJTreeSelection != null) {
+			filePushButton.setEnabled(false);
+			filePullButton.setEnabled(false);
+			fileDeleteButton.setEnabled(true);
 		} else {
 			filePushButton.setEnabled(false);
 			filePullButton.setEnabled(false);
-			//fileDeleteButton.setEnabled(false);
+			fileDeleteButton.setEnabled(false);
 		}
 	}
 	
@@ -319,7 +320,31 @@ public class ClientView {
 		}
 	};
 	
+	private ActionListener fileDeleteButtonActionListener = new ActionListener() {
 		@Override
+		public void actionPerformed(ActionEvent e) {
+			try {
+				if(clientJTreeSelection == null && serverJTreeSelection != null) {
+					// Send remove file command to server
+					client.sendFileRemove(serverJTreeSelection.getPath(), serverJTreeSelection.getName());
+					client.sendDirectoryListingRequest();
+					serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
+				} else if(clientJTreeSelection != null && serverJTreeSelection == null) {
+					// delete local file
+					client.getFSWorkspace().deleteFile(clientJTreeSelection.getPath(), StandardCopyOption.REPLACE_EXISTING);
+					clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
+				}
+				
+				updateTrees();
+				clearTreeSelections();
+				
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			} /*finally {
+				mainPanel.revalidate();
+				clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
+				clearTreeSelections();
+			}*/
 		}
 	};
 	

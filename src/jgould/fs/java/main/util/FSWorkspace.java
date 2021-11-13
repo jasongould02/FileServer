@@ -3,6 +3,7 @@ package jgould.fs.java.main.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -49,13 +50,14 @@ public class FSWorkspace {
 	public File deleteFile(String source, StandardCopyOption copyOption) throws IOException, Exception { 
 		checkWorkspace();
 		
-		File sourceFile = new File(getAbsolutePath() + source);
+		File sourceFile = new File(source);
 		
 		// DEBUG
 		//System.out.println("Does " + sourceFile.getCanonicalPath() + " exists: " + sourceFile.exists() + " (" + sourceFile.getAbsolutePath() + ")");
 		
+		File tempFile = new File(FSConstants.getTrashBin().getPath() + sourceFile.separator + sourceFile.getName());
 		if(sourceFile.exists()) {
-			Files.move(sourceFile.toPath(), FSConstants.getTrashBin().toPath(), copyOption);
+			Files.move(sourceFile.toPath(), tempFile.toPath(), copyOption);
 			sourceFile.delete();
 		}
 		/*if(sourceFile.exists()) { // Check if the file still exists
@@ -120,7 +122,7 @@ public class FSWorkspace {
 	
 	public File addDirectory(String folderName, String destination) {
 		File dest = new File(FSUtil.checkDirectoryEnding(destination) + folderName);
-		System.out.println("add dir" + destination + "\t" + "dest:" + dest.getPath() + "\tfoldername:" + folderName);
+		//System.out.println("add dir" + destination + "\t" + "dest:" + dest.getPath() + "\tfoldername:" + folderName);
 		dest.mkdirs();
 		
 		return dest;

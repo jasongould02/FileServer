@@ -6,11 +6,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
 
-import jgould.fs.java.main.client.FSRemoteFileTree;
+import jgould.fs.java.main.client.FSRemoteFileTreeUtil;
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
 
@@ -53,7 +54,7 @@ public class Worker implements Runnable {
 			} 
 		} else if(input.startsWith(FSConstants.DIRECTORY_LIST_REQUEST)) {
 			//System.out.println("listing requested");
-			ArrayList<String> listing = FSRemoteFileTree.searchDirectory(Server.getFSWorkspace().getWorkspace());
+			ArrayList<String> listing = FSRemoteFileTreeUtil.searchDirectory(Server.getFSWorkspace().getWorkspace());
 			String string_listing = "";
 			for(String s : listing) {
 				string_listing += s + ":";
@@ -82,6 +83,16 @@ public class Worker implements Runnable {
 			String folderName = split[2];
 			
 			Server.getFSWorkspace().addDirectory(folderName, destination);
+		} else if(input.startsWith(FSConstants.REMOVE)) {
+			String[] split = input.split(FSConstants.DELIMITER);
+			String pathToFile = split[1];
+			try {
+				Server.getFSWorkspace().deleteFile(pathToFile, StandardCopyOption.REPLACE_EXISTING);
+				System.out.println("deleting file" + pathToFile);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
 		}
 	}
 	

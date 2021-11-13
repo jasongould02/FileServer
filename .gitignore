@@ -4,6 +4,7 @@ bin/
 
 workspace/
 server_workspace/
+trash/
 *.png
 
 
