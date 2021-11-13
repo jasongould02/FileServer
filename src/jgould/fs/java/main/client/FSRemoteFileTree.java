@@ -21,7 +21,9 @@ public class FSRemoteFileTree {
     private DefaultTreeModel treeModel = null;
     
     public FSRemoteFileTree(ArrayList<String> pathList) {
-    	tree = createJTree(tree, pathList, rootNode, treeModel);
+    	synchronized(this) {
+    		tree = createJTree(tree, pathList, rootNode, treeModel);
+    	}
     	tree.setRowHeight(25);
     }
     
