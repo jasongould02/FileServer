@@ -56,6 +56,21 @@ public class FSWorkspace {
 		//System.out.println("Does " + sourceFile.getCanonicalPath() + " exists: " + sourceFile.exists() + " (" + sourceFile.getAbsolutePath() + ")");
 		
 		File tempFile = new File(FSConstants.getTrashBin().getPath() + sourceFile.separator + sourceFile.getName());
+		int i = 0;
+		if(sourceFile.isFile()) {
+			String actualName = sourceFile.getName().substring(0, sourceFile.getName().lastIndexOf('.'));
+			String extension = sourceFile.getName().substring(sourceFile.getName().lastIndexOf('.'));
+			while(tempFile.exists()) {
+				tempFile = new File(FSConstants.getTrashBin().getPath() + sourceFile.separator + actualName + " (" + i + ")" + extension);
+				i++;
+			}
+		} else {
+			String actualName = sourceFile.getName();
+			while(tempFile.exists()) {
+				tempFile = new File(FSConstants.getTrashBin().getPath() + sourceFile.separator + actualName + " (" + i + ")");
+				i++;
+			}
+		}
 		if(sourceFile.exists()) {
 			Files.move(sourceFile.toPath(), tempFile.toPath(), copyOption);
 			sourceFile.delete();
