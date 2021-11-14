@@ -44,6 +44,7 @@ public class ClientView {
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
 	private JMenuItem connectItem;
+	private JMenuItem disconnectItem;
 	
 	// Client File Tree
     private FSRemoteFile clientJTreeSelection = null;
@@ -76,11 +77,15 @@ public class ClientView {
 	private void createJMenu(JFrame parent) {
 		menuBar = new JMenuBar();
 		fileMenu = new JMenu("File");
-		connectItem = new JMenuItem("Connect");
 		
+		connectItem = new JMenuItem("Connect");
 		connectItem.addActionListener(connectActionListener);
 		
+		disconnectItem = new JMenuItem("Disconnect");
+		disconnectItem.addActionListener(disconnectActionListener);
+		
 		fileMenu.add(connectItem);
+		fileMenu.add(disconnectItem);
 		menuBar.add(fileMenu);
 		parent.setJMenuBar(menuBar);
 	}
@@ -98,9 +103,7 @@ public class ClientView {
 		
 		createJMenu(frame);
 		
-		dialog = new ConnectDialog(this, frame, true);
-		dialog.setLocationRelativeTo(frame);
-		dialog.setVisible(true);
+		showConnectDialog();
 		
 		mainPanel = new JPanel();
 		
@@ -256,9 +259,24 @@ public class ClientView {
 		}
 	};
 	
+	private void showConnectDialog() {
+		dialog = new ConnectDialog(this, frame, true);
+		dialog.setLocationRelativeTo(frame);
+		dialog.setVisible(true);
+	}
+	
 	private ActionListener connectActionListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			showConnectDialog();
+		}
+	};
+	
+	private ActionListener disconnectActionListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			client.disconnect();
+			serverTree.refreshTreeModel(null);
 		}
 	};
 	

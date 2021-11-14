@@ -72,6 +72,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		this.add(mainPanel);
 		mainPanel.setMinimumSize(new Dimension(250, 200));
 		this.setMinimumSize(mainPanel.getMinimumSize());
+		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 	}
 	
 	@Override

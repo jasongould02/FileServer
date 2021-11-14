@@ -87,7 +87,7 @@ public class Client implements Runnable {
 		//this.start();
 	}
 
-	private void disconnect() {
+	protected void disconnect() {
 		if (socket != null) {
 			try {
 				socket.close();
