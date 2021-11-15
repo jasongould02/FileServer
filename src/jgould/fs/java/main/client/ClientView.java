@@ -248,12 +248,7 @@ public class ClientView {
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-			//serverJTree.revalidate();
 			mainPanel.revalidate();
-			//serverWorkspaceRootFile = FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList());
-			//refreshServerTreeModel();
-			//setServerTreeModel(new DefaultTreeModel(generateTreeNode(serverWorkspaceRootFile, null)));
-			//refreshClientTreeModel();
 			serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
 			clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
 		}
@@ -305,7 +300,6 @@ public class ClientView {
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			} finally {
-				//refreshServerTreeModel();
 				serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
 				clearTreeSelections();
 			}
@@ -342,27 +336,19 @@ public class ClientView {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
-				if(clientJTreeSelection == null && serverJTreeSelection != null) {
-					// Send remove file command to server
+				if(clientJTreeSelection == null && serverJTreeSelection != null) { // Send remove file command to server
 					client.sendFileRemove(serverJTreeSelection.getPath(), serverJTreeSelection.getName());
 					client.sendDirectoryListingRequest();
 					serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
-				} else if(clientJTreeSelection != null && serverJTreeSelection == null) {
-					// delete local file
+				} else if(clientJTreeSelection != null && serverJTreeSelection == null) { // delete local file
 					client.getFSWorkspace().deleteFile(clientJTreeSelection.getPath(), StandardCopyOption.REPLACE_EXISTING);
 					clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
 				}
-				
 				updateTrees();
 				clearTreeSelections();
-				
 			} catch (Exception e1) {
 				e1.printStackTrace();
-			} /*finally {
-				mainPanel.revalidate();
-				clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
-				clearTreeSelections();
-			}*/
+			}
 		}
 	};
 	
@@ -426,20 +412,26 @@ public class ClientView {
 		public void mousePressed(MouseEvent e) {}
 		@Override
 		public void mouseReleased(MouseEvent e) {
-			FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) clientTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
-			if(file != null && clientJTreeSelection != null) {
-				if(file.getPath().equals(clientJTreeSelection.getPath())) {
-					System.out.println("node is already selected, deselecting");
-					clearTreeSelections();
-					updateCenterPanelButtons();
-					return;
+			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
+				FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) clientTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
+				if(file != null && clientJTreeSelection != null) {
+					if(file.getPath().equals(clientJTreeSelection.getPath())) {
+						System.out.println("node is already selected, deselecting");
+						clearTreeSelections();
+						updateCenterPanelButtons();
+						return;
+					}
 				}
+				
+				if(file != null) {
+					clientJTreeSelection = file;
+				}
+				updateCenterPanelButtons();
+			} else { 
+				System.out.println("invalid selection");
+				clearTreeSelections();
+				updateCenterPanelButtons();
 			}
-			
-			if(file != null) {
-				clientJTreeSelection = file;
-			}
-			updateCenterPanelButtons();
 		}
 	};
 	
@@ -454,19 +446,25 @@ public class ClientView {
 		public void mousePressed(MouseEvent e) {}
 		@Override
 		public void mouseReleased(MouseEvent e) {
-			FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) serverTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
-			if(file != null && serverJTreeSelection != null) {
-				if(file.getPath().equals(serverJTreeSelection.getPath())) {
-					clearTreeSelections();
-					updateCenterPanelButtons();
-					return;
+			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
+				FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) serverTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
+				if(file != null && serverJTreeSelection != null) {
+					if(file.getPath().equals(serverJTreeSelection.getPath())) {
+						clearTreeSelections();
+						updateCenterPanelButtons();
+						return;
+					}
 				}
+				
+				if(file != null) {
+					serverJTreeSelection = file;
+				}
+				updateCenterPanelButtons();
+			} else {
+				System.out.println("invalid selection on server tree");
+				clearTreeSelections();
+				updateCenterPanelButtons();
 			}
-			
-			if(file != null) {
-				serverJTreeSelection = file;
-			}
-			updateCenterPanelButtons();
 		}
 		
 	};
