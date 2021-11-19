@@ -5,6 +5,7 @@ bin/
 workspace/
 server_workspace/
 trash/
+savedConnections.json
 *.png
 
 
