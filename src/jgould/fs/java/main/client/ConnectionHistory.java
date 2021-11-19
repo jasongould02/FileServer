@@ -22,6 +22,8 @@ public class ConnectionHistory {
 	private final static String SERVER_IP_KEY = "serverIP";
 	private final static String SERVER_PORT_KEY = "serverPort";
 	private final static String SERVER_TIMEOUT_KEY = "serverTimeout";
+	
+	private final static String PREVIOUS_SERVER_NAME = "PREVIOUS_SERVER_NAME"; // This is the name applied to connection that the user requested to be remembered
 
 	private ConnectionHistory() throws FileNotFoundException, JSONException {
 		//JSONObject connections = loadJSONFile("savedConnections.json"); // loads the file and places it into the 'connections' JSONObject (represents the JSON file)
@@ -57,7 +59,7 @@ public class ConnectionHistory {
 	 * @return desired JSONObject if it exists, null if requested object does not exist or if no JSONObject has been loaded (see {@link ConnectionHistory#loadJSONFile(String)} 
 	 * @throws JSONException
 	 */
-	public static Connection getConnection(String objectName) throws JSONException {
+	public static Connection getConnection(String objectName) {
 		if(connectionsMap == null || objectName == null) {
 			return null;
 		}
@@ -82,7 +84,7 @@ public class ConnectionHistory {
 		if(connections == null) {
 			return;
 		}
-		Iterator i = connections.keys();
+		Iterator<?> i = connections.keys();
 		while(i.hasNext()) {
 			String key = (String) i.next();
 			JSONObject obj = connections.getJSONObject(key);
