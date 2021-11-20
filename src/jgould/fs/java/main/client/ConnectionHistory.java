@@ -23,8 +23,9 @@ public class ConnectionHistory {
 	private final static String SERVER_PORT_KEY = "serverPort";
 	private final static String SERVER_TIMEOUT_KEY = "serverTimeout";
 	
-	private final static String PREVIOUS_SERVER_NAME = "PREVIOUS_SERVER_NAME"; // This is the name applied to connection that the user requested to be remembered
-
+	private final static String PREVIOUS_SERVER_NAME = "PREVIOUS_SERVER_NAME"; // This is the field inside the savedConnections.json file that contains the serverName of the previous connected server
+	private static String recent_connection_name = "";
+	
 	private ConnectionHistory() throws FileNotFoundException, JSONException {
 		//JSONObject connections = loadJSONFile("savedConnections.json"); // loads the file and places it into the 'connections' JSONObject (represents the JSON file)
 		//addAllConnections(connections); // Call after ConnectionHistory#loadJSONFile(String filePath) in order to load into HashMap
@@ -38,8 +39,8 @@ public class ConnectionHistory {
 	 * Will load the file at the given file path (if it exists) and also return the JSONObject (the contents of the file as a JSONObject)
 	 * @param filePath path to the desired .json file
 	 * @return JSONObject of the file at given path: filePath
-	 * @throws FileNotFoundException 
-	 * @throws JSONException
+	 * @throws FileNotFoundException if the file is not found however, the file.isFile() should not allow this to happen
+	 * @throws JSONException thrown if the JSON file is invalid or an error occurs while parsing the file 
 	 */
 	public static JSONObject loadJSONFile(String filePath) throws FileNotFoundException, JSONException {
 		File file = new File(filePath);
@@ -48,16 +49,20 @@ public class ConnectionHistory {
 		}
 	
 		BufferedReader reader = new BufferedReader(new FileReader(file));
-		JSONObject obj = new JSONObject(new JSONTokener(reader));
+		try {
+			JSONObject obj = new JSONObject(new JSONTokener(reader));
+			return obj;
+		} catch(JSONException e) {
+			System.out.println("Invalid JSON file.");
+			return null;
+		}
 
-		return obj;
 	}
 	
 	/**
 	 * Returns {@link Connection} object of a previous connection. This method returns null if the Connection can't be found in the HashMap
 	 * @param objectName the server name of the connection
 	 * @return desired JSONObject if it exists, null if requested object does not exist or if no JSONObject has been loaded (see {@link ConnectionHistory#loadJSONFile(String)} 
-	 * @throws JSONException
 	 */
 	public static Connection getConnection(String objectName) {
 		if(connectionsMap == null || objectName == null) {
@@ -80,6 +85,11 @@ public class ConnectionHistory {
 	
 	// Call after ConnectionHistory#loadJSONFile(String filePath) in order to load into HashMap
 	// If there is a previous connections with the same serverName, it will be overwritten 
+	/**
+	 * Searches the JSONObject for child objects (Connections)
+	 * @param connections JSONObject (from {@link ConnectionHistory#loadJSONFile(String)})
+	 * @throws JSONException thrown if the JSONObject is invalid causing an error while parsing {@link Connection} data
+	 */
 	public static void addAllConnections(JSONObject connections) throws JSONException {
 		if(connections == null) {
 			return;
@@ -87,6 +97,10 @@ public class ConnectionHistory {
 		Iterator<?> i = connections.keys();
 		while(i.hasNext()) {
 			String key = (String) i.next();
+			if(key.equals(PREVIOUS_SERVER_NAME)) {
+				setMostRecentConnectionName(connections.getString(PREVIOUS_SERVER_NAME));
+				continue;
+			}
 			JSONObject obj = connections.getJSONObject(key);
 			if(obj == null) {
 				continue;
@@ -104,7 +118,13 @@ public class ConnectionHistory {
 		}
 	}
 	
-	public static JSONObject saveConnections(String target) throws JSONException, IOException {
+	/**
+	 * Saves the {@link Connection} data currently stored in the {@link ConcurrentHashMap}.
+	 * @param target is the path to the file where the data should be stored
+	 * @throws JSONException if there is an error while putting the {@link Connection} data into JSONObjects
+	 * @throws IOException if there is an error while writing the data
+	 */
+	public static void saveConnections(String target) throws JSONException, IOException {
 		File file = new File(target);
 		if(!file.exists()) {
 			file.createNewFile();
@@ -122,13 +142,29 @@ public class ConnectionHistory {
 			root.putOnce(connection.getServerName(), c);
 		}
 		
+		root.putOnce(PREVIOUS_SERVER_NAME, recent_connection_name);
+		
 		BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 		root.write(writer);
 		writer.flush(); // necessary since JSONObject.write() will not flush the writer stream
 		
-		return root;
+		//return root;
 	}
 	
+	/**
+	 * Sets the value of the {@link PREVIOUS_SERVER_NAME} key to the desired server name 
+	 * @param name is the name of the most recent server connected to
+	 */
+	public static void setMostRecentConnectionName(String name) {
+		recent_connection_name = name;
+	}
 	
+	/**
+	 * 
+	 * @return the value of the {@link PREVIOUS_SERVER_NAME} key. It can return null, "" (an empty string), or a valid name 
+	 */
+	public static String getMostRecentConnectionName() {
+		return recent_connection_name;
+	}
 	
 }
