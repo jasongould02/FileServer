@@ -10,7 +10,6 @@ import java.net.Socket;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.List;
 
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
@@ -29,11 +28,9 @@ public class Client implements Runnable {
 	private Thread thread = null;
 	private boolean running = true;
 	
-	private ClientView owner; // this feels wrong
-	
 	private ArrayList<FSRemoteFileTreeListener> fsRemoteFileTreeListeners = new ArrayList<FSRemoteFileTreeListener>();
 	
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		try {
 			FSWorkspace w = new FSWorkspace();
 			w.setWorkspace("workspace/");
@@ -41,15 +38,13 @@ public class Client implements Runnable {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
+	}*/
 	
 	public Client() {
-		socket = new Socket();
 		//this.start();
 	}
 	
 	public Client(String serverIP, int portNumber, int timeout) throws IOException {
-		socket = new Socket();
 		//socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
 		this.connectToServer(serverIP, portNumber, timeout);
 		System.out.println("connection made");
@@ -67,24 +62,14 @@ public class Client implements Runnable {
 	 * @throws IOException
 	 */
 	public Client(String serverIP, int portNumber, int timeout, String pathToWorkspace) throws IOException, Exception {
-		socket = new Socket();
-		this.connectToServer(serverIP, portNumber, timeout);
-		System.out.println("connection made");
-		
+		this.connectToServer(serverIP, portNumber, timeout); // starts thread
 		this.workspace = new FSWorkspace(pathToWorkspace);
-		
-		//this.start();
 	}
 	
 	private Client(String serverIP, int portNumber, int timeout, FSWorkspace workspace) throws IOException {
 		socket = new Socket();
-		//socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
-		this.connectToServer(serverIP, portNumber, timeout);
-		System.out.println("connection made");
-		
+		this.connectToServer(serverIP, portNumber, timeout); // starts thread
 		this.workspace = workspace; 
-		
-		//this.start();
 	}
 
 	protected void disconnect() {
@@ -100,14 +85,9 @@ public class Client implements Runnable {
 		}
 	}
 
-	protected boolean connectToServer(String ipAddress, int portNumber, int timeout) {
-		if (socket == null) {
-			socket = new Socket();
-		} else if (socket.isClosed()) {
-			socket = null;
-			socket = new Socket();
-		}
+	protected synchronized boolean connectToServer(String ipAddress, int portNumber, int timeout) {
 		try {
+			socket = new Socket();
 			socket.connect(new InetSocketAddress(ipAddress, portNumber), timeout);
 			writer = new OutputStreamWriter(socket.getOutputStream());
 			reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -145,7 +125,7 @@ public class Client implements Runnable {
 	 * @param data
 	 */
 	private void write(String data) {
-		if(writer != null) {
+		if(writer != null && socket.isConnected()) {
 			try {
 				writer.write(data + "\r\n");
 				writer.flush();
@@ -176,7 +156,8 @@ public class Client implements Runnable {
 			String string_data = split[4];
 			
 			byte[] data = Base64.getDecoder().decode(string_data);
-			System.out.println("writing file:" + name + "\tdest:" + destination);
+			System.out.println("Sending File:" + name + "\tDestination:" + destination);
+			//System.out.println("writing file:" + name + "\tdest:" + destination);
 			workspace.addFile(name, data, destination, StandardOpenOption.CREATE);
 		} else if(input.startsWith(FSConstants.FOLDER)) {
 			String[] split = input.split(FSConstants.DELIMITER);
@@ -236,7 +217,13 @@ public class Client implements Runnable {
 			//sendFileRequest("server_workspace/testfolder/", "",  "workspace/temp/test/");
 			this.sendDirectoryListingRequest();
 						
-			while((input = reader.readLine()) != null) { // Not very good for large files (AFAIK >~ 4 MB) 
+			while((input = reader.readLine()) != null) { // Not very good for large files (AFAIK >~ 4 MB)
+				if(writer == null && !socket.isClosed()) {
+					writer = new OutputStreamWriter(socket.getOutputStream());
+				}
+				if(reader == null && !socket.isClosed()) {
+					reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+				}
 				//System.out.println("Data received:" + input);
 				parseCommand(input);
 			}

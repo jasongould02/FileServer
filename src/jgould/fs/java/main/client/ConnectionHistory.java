@@ -26,7 +26,7 @@ public class ConnectionHistory {
 	private final static String PREVIOUS_SERVER_NAME = "PREVIOUS_SERVER_NAME"; // This is the field inside the savedConnections.json file that contains the serverName of the previous connected server
 	private static String recent_connection_name = "";
 	
-	private ConnectionHistory() throws FileNotFoundException, JSONException {
+	private ConnectionHistory() {
 		//JSONObject connections = loadJSONFile("savedConnections.json"); // loads the file and places it into the 'connections' JSONObject (represents the JSON file)
 		//addAllConnections(connections); // Call after ConnectionHistory#loadJSONFile(String filePath) in order to load into HashMap
 		
@@ -86,7 +86,7 @@ public class ConnectionHistory {
 	// Call after ConnectionHistory#loadJSONFile(String filePath) in order to load into HashMap
 	// If there is a previous connections with the same serverName, it will be overwritten 
 	/**
-	 * Searches the JSONObject for child objects (Connections)
+	 * Searches the JSONObject for child objects (Connections). The connections parameter should be the JSONObject that is loaded from a file (the object that represents the entire file)
 	 * @param connections JSONObject (from {@link ConnectionHistory#loadJSONFile(String)})
 	 * @throws JSONException thrown if the JSONObject is invalid causing an error while parsing {@link Connection} data
 	 */

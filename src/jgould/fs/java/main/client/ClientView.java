@@ -8,8 +8,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.StandardCopyOption;
@@ -25,6 +27,8 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.DefaultMutableTreeNode;
+
+import org.json.JSONException;
 
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
@@ -68,6 +72,7 @@ public class ClientView {
 	public static void main(String[] args) {
 		try {
 			Client c = new Client();
+			ConnectionHistory.addAllConnections(ConnectionHistory.loadJSONFile("savedConnections.json"));
 			ClientView clientView = new ClientView(c);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -100,6 +105,7 @@ public class ClientView {
 		frame.setSize(width, height);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.addWindowListener(windowListener);
 		
 		createJMenu(frame);
 		
@@ -255,7 +261,7 @@ public class ClientView {
 	};
 	
 	private void showConnectDialog() {
-		dialog = new ConnectDialog(this, frame, true);
+		dialog = new ConnectDialog(this, frame, false);
 		dialog.setLocationRelativeTo(frame);
 		dialog.setVisible(true);
 	}
@@ -389,8 +395,12 @@ public class ClientView {
 	
 	public void updateTrees() {
 		//serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
-		serverTree.refreshTreeModel(client.getRemoteFileTree());
-		clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
+		if(serverTree != null) {
+			serverTree.refreshTreeModel(client.getRemoteFileTree());
+		}
+		if(clientTree != null) {
+			clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
+		}
 	}
 	
 	FSRemoteFileTreeListener fsRemoteFileTreeListener = new FSRemoteFileTreeListener() {
@@ -401,15 +411,7 @@ public class ClientView {
 		}
 	};
 	
-	MouseListener clientTreeMouseListener = new MouseListener() {
-		@Override
-		public void mouseClicked(MouseEvent e) {}
-		@Override
-		public void mouseEntered(MouseEvent e) {}
-		@Override
-		public void mouseExited(MouseEvent e) {}
-		@Override
-		public void mousePressed(MouseEvent e) {}
+	MouseAdapter clientTreeMouseListener = new MouseAdapter() {
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
@@ -435,15 +437,7 @@ public class ClientView {
 		}
 	};
 	
-	MouseListener serverTreeMouseListener = new MouseListener() {
-		@Override
-		public void mouseClicked(MouseEvent e) {}
-		@Override
-		public void mouseEntered(MouseEvent e) {}
-		@Override
-		public void mouseExited(MouseEvent e) {}
-		@Override
-		public void mousePressed(MouseEvent e) {}
+	MouseAdapter serverTreeMouseListener = new MouseAdapter() {
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
@@ -455,7 +449,6 @@ public class ClientView {
 						return;
 					}
 				}
-				
 				if(file != null) {
 					serverJTreeSelection = file;
 				}
@@ -469,5 +462,15 @@ public class ClientView {
 		
 	};
 	
+	WindowAdapter windowListener = new WindowAdapter() {
+		@Override
+	    public void windowClosing(WindowEvent e) {
+			try {
+				ConnectionHistory.saveConnections("savedConnections.json");
+			} catch (JSONException | IOException e1) {
+				e1.printStackTrace();
+			}
+	    }
+	};
 	
 }

@@ -56,10 +56,10 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		serverTimeoutField = new JTextField(10);
 		
 		// FOR TESTING
-		System.out.println("remove these");
+		/*System.out.println("remove these");
 		serverIPField.setText("127.0.0.1");
 		serverPortField.setText("80");
-		serverTimeoutField.setText("5000");
+		serverTimeoutField.setText("5000");*/
 		
 		connectButton = new JButton("Connect");
 		cancelButton = new JButton("Cancel");
@@ -68,6 +68,13 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		rememberServerCheckBox.setEnabled(true);
 		rememberServerCheckBox.setSelected(false);
 		rememberServerCheckBox.setText("Remember Server");
+		Connection previousConnection = ConnectionHistory.getConnection(ConnectionHistory.getMostRecentConnectionName());
+		if(previousConnection == null) {
+			System.out.println("no previous connection found");
+		} else {
+			addConnectionToFields(previousConnection);
+			rememberServerCheckBox.setSelected(true);
+		}
 		
 		mainPanel.add(new JLabel("Server Name:"));
 		mainPanel.add(serverNameField);
@@ -104,6 +111,21 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		return new String[] {serverNameField.getText(), serverIPField.getText(), serverPortField.getText(), serverTimeoutField.getText()};
 	}
 	
+	/*private Connection getMostRecentConnection() {
+		return ConnectionHistory.getConnection(ConnectionHistory.getMostRecentConnectionName());
+	}*/
+	
+	private void addConnectionToFields(Connection connection) {
+		if(connection == null) {
+			clearTextFields();
+		} else {
+			serverNameField.setText(connection.getServerName());
+			serverIPField.setText(connection.getServerIP());
+			serverPortField.setText(""+connection.getServerPort());
+			serverTimeoutField.setText(""+connection.getServerTimeout());
+		}
+	}
+	
 	public void clearTextFields() {
 		serverNameField.setText("");
 		serverIPField.setText("");
@@ -128,21 +150,41 @@ public class ConnectDialog extends JDialog implements ActionListener {
 			serverPort = serverPortField.getText();
 			serverTimeout = serverTimeoutField.getText();
 			
+			if(serverName.length() == 0 || serverIP.length() == 0 || serverPort.length() == 0 || serverTimeout.length() == 0) {
+				// No input in at least one of the fields
+				/*System.out.println("name Length:" + serverName.length());
+				System.out.println("serverip length:" + serverIP.length());
+				System.out.println("serverport length:" + serverPort.length());
+				System.out.println("servertimeout length:" + serverTimeout.length());*/
+				return;
+			}
+			
 			int portNumber = Integer.parseInt(serverPort);
 			int timeout = Integer.parseInt(serverTimeout);
-			
-			boolean connected = cv.getClient().connectToServer(serverIP, portNumber, timeout);
+			System.out.println("attempting connections");
+			cv.getClient().connectToServer(serverIP, portNumber, timeout);
+			System.out.println("finished attempting");
 			try {
 				cv.getClient().sendDirectoryListingRequest();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 			
-			if(connected) {
-				ConnectionHistory.addConnection(new Connection(serverName, serverIP, portNumber, timeout));
+			if (cv.getClient().isConnected()) {
+				System.out.println("client connected");
+				if(rememberServer == true) {
+					ConnectionHistory.addConnection(new Connection(serverName, serverIP, portNumber, timeout));
+					ConnectionHistory.setMostRecentConnectionName(serverName);
+				}
 				setVisible(false);
 				cv.updateTrees();
 			} else {
+				System.out.println("CLIENT IS NOT CONNECTED");
+				System.out.println("name: [" + serverName + "]" + "\tlength: [" + serverName.length() + "]");
+				System.out.println("serverip [" + serverIP + "]" + "\tlength: [" + serverIP.length() + "]");
+				System.out.println("serverport [" + serverPort + "]" + "\tlength: [" + serverPort.length() + "]");
+				System.out.println("servertimeout [" + serverTimeout + "]" + "\tlength: [" + serverTimeout.length() + "]");
+				
 				JOptionPane.showMessageDialog(mainPanel, "Invalid server information, unable to connect.");
 			}
 			
@@ -162,9 +204,11 @@ public class ConnectDialog extends JDialog implements ActionListener {
 
 		@Override
 		public void itemStateChanged(ItemEvent e) {
-			if(e.getStateChange() == e.SELECTED) {
+			if(e.getStateChange() == ItemEvent.SELECTED) {
+				rememberServerCheckBox.setSelected(true);
 				rememberServer = true;
 			} else {
+				rememberServerCheckBox.setSelected(false);
 				rememberServer = false;
 			}
 			
