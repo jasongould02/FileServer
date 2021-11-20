@@ -4,9 +4,12 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.IOException;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -16,6 +19,7 @@ import javax.swing.JTextField;
 
 public class ConnectDialog extends JDialog implements ActionListener {
 
+	private JTextField serverNameField;
 	private JTextField serverIPField;
 	private JTextField serverPortField;
 	private JTextField serverTimeoutField;
@@ -26,9 +30,13 @@ public class ConnectDialog extends JDialog implements ActionListener {
 	private JPanel mainPanel;
 	private GridLayout layout;
 	
+	private String serverName;
 	private String serverIP;
 	private String serverPort;
 	private String serverTimeout;
+	
+	private JCheckBox rememberServerCheckBox;
+	private boolean rememberServer = false;
 	
 	private ClientView cv;
 
@@ -42,6 +50,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		layout = new GridLayout(0, 2, 10, 10);
 		mainPanel.setLayout(layout);
 		
+		serverNameField = new JTextField(20);
 		serverIPField = new JTextField(20);
 		serverPortField = new JTextField(10);
 		serverTimeoutField = new JTextField(10);
@@ -55,6 +64,14 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		connectButton = new JButton("Connect");
 		cancelButton = new JButton("Cancel");
 		
+		rememberServerCheckBox = new JCheckBox();
+		rememberServerCheckBox.setEnabled(true);
+		rememberServerCheckBox.setSelected(false);
+		rememberServerCheckBox.setText("Remember Server");
+		
+		mainPanel.add(new JLabel("Server Name:"));
+		mainPanel.add(serverNameField);
+		
 		mainPanel.add(new JLabel("Server IP:"));
 		mainPanel.add(serverIPField);
 		
@@ -67,10 +84,13 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		mainPanel.add(connectButton);
 		mainPanel.add(cancelButton);
 		
+		mainPanel.add(rememberServerCheckBox);
+		rememberServerCheckBox.addItemListener(rememberServerListener);
+		
 		connectButton.addActionListener(connectButtonListener);
 		
 		this.add(mainPanel);
-		mainPanel.setMinimumSize(new Dimension(250, 200));
+		mainPanel.setMinimumSize(new Dimension(250, 250));
 		this.setMinimumSize(mainPanel.getMinimumSize());
 		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 	}
@@ -81,7 +101,14 @@ public class ConnectDialog extends JDialog implements ActionListener {
 	}
 	
 	public String[] getConnectDialogInput() {
-		return new String[] {serverIPField.getText(), serverPortField.getText(), serverTimeoutField.getText()};
+		return new String[] {serverNameField.getText(), serverIPField.getText(), serverPortField.getText(), serverTimeoutField.getText()};
+	}
+	
+	public void clearTextFields() {
+		serverNameField.setText("");
+		serverIPField.setText("");
+		serverPortField.setText("");
+		serverTimeoutField.setText("");
 	}
 	
 	public void setConnectButtonListener(ActionListener al) {
@@ -96,6 +123,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			
+			serverName = serverNameField.getText();
 			serverIP = serverIPField.getText();
 			serverPort = serverPortField.getText();
 			serverTimeout = serverTimeoutField.getText();
@@ -103,17 +131,45 @@ public class ConnectDialog extends JDialog implements ActionListener {
 			int portNumber = Integer.parseInt(serverPort);
 			int timeout = Integer.parseInt(serverTimeout);
 			
-			cv.getClient().connectToServer(serverIP, portNumber, timeout);
+			boolean connected = cv.getClient().connectToServer(serverIP, portNumber, timeout);
 			try {
 				cv.getClient().sendDirectoryListingRequest();
-				//cv.refreshServerTreeModel();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 			
-			setVisible(false);
+			if(connected) {
+				ConnectionHistory.addConnection(new Connection(serverName, serverIP, portNumber, timeout));
+				setVisible(false);
+				cv.updateTrees();
+			} else {
+				JOptionPane.showMessageDialog(mainPanel, "Invalid server information, unable to connect.");
+			}
+			
 		}
 	};
 	
+	ActionListener cancelButtonListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			
+			setVisible(false);
+			
+		}
+	};
+	
+	ItemListener rememberServerListener = new ItemListener() {
+
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			if(e.getStateChange() == e.SELECTED) {
+				rememberServer = true;
+			} else {
+				rememberServer = false;
+			}
+			
+		}
+		
+	};
 
 }
