@@ -74,6 +74,12 @@ public class Worker implements Runnable {
 			String string_data = split[4];
 			
 			byte[] data = Base64.getDecoder().decode(string_data);
+			if(destination.isEmpty()) {
+				destination = Server.getFSWorkspace().getWorkspace().getPath();
+			}
+			if(!destination.startsWith(Server.getFSWorkspace().getWorkspace().getPath())) {
+				destination = Server.getFSWorkspace().getWorkspace().getPath() + File.separator + destination;
+			}
 			Server.getFSWorkspace().addFile(name, data, destination, StandardOpenOption.CREATE);
 		} else if(input.startsWith(FSConstants.FOLDER)) {
 			String[] split = input.split(FSConstants.DELIMITER);
@@ -82,6 +88,9 @@ public class Worker implements Runnable {
 			String destination = split[1];
 			String folderName = split[2];
 			
+			if(!destination.startsWith(Server.getFSWorkspace().getWorkspace().getPath())) {
+				destination = Server.getFSWorkspace().getWorkspace().getPath() + File.separator + destination;
+			}
 			Server.getFSWorkspace().addDirectory(folderName, destination);
 		} else if(input.startsWith(FSConstants.REMOVE)) {
 			String[] split = input.split(FSConstants.DELIMITER);

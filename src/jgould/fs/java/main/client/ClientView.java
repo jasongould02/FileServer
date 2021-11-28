@@ -227,7 +227,27 @@ public class ClientView {
 	}
 	
 	private void updateCenterPanelButtons() {
-		if(clientJTreeSelection != null && serverJTreeSelection != null) {
+		if(clientJTreeSelection != null && serverJTreeSelection != null) { // selection on both Server and Client JTrees
+			filePushButton.setEnabled(true);
+			filePullButton.setEnabled(true);
+			fileDeleteButton.setEnabled(false);
+		} else {
+			if(clientJTreeSelection != null && serverJTreeSelection == null) { // selection only on Client JTree
+				filePushButton.setEnabled(true);
+				filePullButton.setEnabled(false);
+				fileDeleteButton.setEnabled(true);
+			} else if(serverJTreeSelection != null && clientJTreeSelection == null) { // selection only on Server JTree
+				filePushButton.setEnabled(false);
+				filePullButton.setEnabled(true);
+				fileDeleteButton.setEnabled(true);
+			} else { // nothing selected
+				filePushButton.setEnabled(false);
+				filePullButton.setEnabled(false);
+				fileDeleteButton.setEnabled(false);
+			}
+		}
+		
+		/*if(clientJTreeSelection != null && serverJTreeSelection != null) {
 			filePushButton.setEnabled(true);
 			filePullButton.setEnabled(true);
 			fileDeleteButton.setEnabled(false);
@@ -286,18 +306,27 @@ public class ClientView {
 		public void actionPerformed(ActionEvent e) {
 			try {
 				String destination;
-				if(FSRemoteFileTreeUtil.getExtension(clientJTreeSelection) == null) { 											// sending a folder
-					if(FSRemoteFileTreeUtil.getExtension(serverJTreeSelection) == null) { 										// sending directory to a folder
-						destination = serverJTreeSelection.getPath() + File.separator + clientJTreeSelection.getName();
-					} else { 																								// sending file to parent folder of a file
-						destination = FSUtil.getParent(serverJTreeSelection.getPath()) + File.separator + clientJTreeSelection.getName();
+				if(FSRemoteFileTreeUtil.getExtension(clientJTreeSelection) == null) { // sending a folder
+					if(serverJTreeSelection == null || serverJTreeSelection.getPath().isEmpty()) {
+						destination = clientJTreeSelection.getName(); // server_workspace_rootfolder + separator + clientjtreeselection name
+					} else {
+						if(FSRemoteFileTreeUtil.getExtension(serverJTreeSelection) == null) { // sending directory to a folder
+							destination = serverJTreeSelection.getPath() + File.separator + clientJTreeSelection.getName();
+						} else { // sending file to parent folder of a file
+							destination = FSUtil.getParent(serverJTreeSelection.getPath()) + File.separator + clientJTreeSelection.getName();
+						}
 					}
 					client.sendDirectory(new File(clientJTreeSelection.getPath()), destination, destination);
-				} else { 																									// sending a regular file
-					if(FSRemoteFileTreeUtil.getExtension(serverJTreeSelection) == null) { 										// sending file to a folder
-						destination = serverJTreeSelection.getPath();
-					} else { 																								// sending file to parent folder of a file
-						destination = FSUtil.getParent(serverJTreeSelection.getPath());
+					
+				} else { // sending a regular file
+					if(serverJTreeSelection == null || serverJTreeSelection.getPath().isEmpty()) {
+						destination = "";
+					} else {
+						if(FSRemoteFileTreeUtil.getExtension(serverJTreeSelection) == null) { // sending file to a folder
+							destination = serverJTreeSelection.getPath();
+						} else { // sending file to parent folder of a file
+							destination = FSUtil.getParent(serverJTreeSelection.getPath());
+						}
 					}
 					client.sendFile(new File(clientJTreeSelection.getPath()), destination);
 				}
@@ -316,18 +345,24 @@ public class ClientView {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
-				if(serverJTreeSelection != null && clientJTreeSelection != null) {
-					if(clientJTreeSelection.getPath() != null) {
-						if(FSRemoteFileTreeUtil.getExtension(clientJTreeSelection) == null) { // sending file to a folder
-							client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
-						} else {
-							client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.getParent(clientJTreeSelection.getPath()));
-						}
+				if(serverJTreeSelection != null) {
+					if(clientJTreeSelection == null) {
+						System.out.println("no client selection");
+						client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.checkDirectoryEnding(client.getFSWorkspace().getWorkspace().getPath()));
 					} else {
-						client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), client.getFSWorkspace().getWorkspace().getPath());
+						if(clientJTreeSelection.getPath() != null) {
+							if(FSRemoteFileTreeUtil.getExtension(clientJTreeSelection) == null) { // sending file to a folder
+								client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
+							} else {
+								client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.getParent(clientJTreeSelection.getPath()));
+							}
+						} else {
+							System.out.println("Error: Sending file to Client's workspace directory."); // This should only occur when the clientJTreeSelection is the root folder.
+							client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.checkDirectoryEnding(client.getFSWorkspace().getWorkspace().getPath())); 
+						}
 					}
+					
 				}
-				
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			} finally {
