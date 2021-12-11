@@ -1,10 +1,11 @@
 package jgould.fs.java.main.client;
 
 import java.awt.event.FocusListener;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -15,15 +16,89 @@ import jgould.fs.java.main.util.FSConstants;
 
 public class FSRemoteFileTree {
 
+	private final String TREE_TYPE; 
+	
     private JTree tree = null;
     private DefaultMutableTreeNode rootNode = null;
     private DefaultTreeModel treeModel = null;
     
-    public FSRemoteFileTree(ArrayList<String> pathList) {
+    private JPopupMenu popupMenu = null;
+    private JMenuItem renameItem = null;
+    private JMenuItem pullItem = null;
+    private JMenuItem pushItem = null;
+    private JMenuItem removeItem = null;
+    
+    public JPopupMenu createPopupMenu() {
+    	popupMenu = new JPopupMenu();
+    	
+    	renameItem = new JMenuItem("Rename");
+    	pullItem = new JMenuItem("Download");
+    	pushItem = new JMenuItem("Upload");
+    	removeItem = new JMenuItem("Remove");
+    	
+    	if(TREE_TYPE.equals(FSConstants.CLIENT_TREE)) {
+    		popupMenu.add(renameItem);
+        	popupMenu.add(pushItem);
+        	popupMenu.add(removeItem);
+        	
+        	pullItem = null;
+    	} else if(TREE_TYPE.equals(FSConstants.SERVER_TREE)) {
+    		popupMenu.add(renameItem);
+        	popupMenu.add(pullItem);
+        	popupMenu.add(removeItem);
+        	
+        	pushItem = null;
+    	}
+    	
+    	return popupMenu;
+    }
+    
+    public void addMenu() {
+    	if(TREE_TYPE.equals(FSConstants.CLIENT_TREE)) {
+    		popupMenu.add(renameItem);
+        	popupMenu.add(pushItem);
+        	popupMenu.add(removeItem);
+        	
+        	pullItem = null;
+    	} else if(TREE_TYPE.equals(FSConstants.SERVER_TREE)) {
+    		popupMenu.add(renameItem);
+        	popupMenu.add(pullItem);
+        	popupMenu.add(removeItem);
+        	
+        	pushItem = null;
+    	}
+    }
+    
+    public JPopupMenu getPopupMenu() {
+    	return popupMenu;
+    }
+    
+    public JMenuItem getRenameItem() {
+    	return renameItem;
+    }
+    
+    public JMenuItem getPullItem() {
+    	return pullItem;
+    }
+    
+    public JMenuItem getPushItem() {
+    	return pushItem;
+    }
+    
+    public JMenuItem getRemoveItem() {
+    	return removeItem;
+    }
+    
+    //private void updatePopupMenu() {}
+    
+    public FSRemoteFileTree(final String TREE_TYPE, ArrayList<String> pathList) {
+    	this.TREE_TYPE = TREE_TYPE;
     	synchronized(this) {
     		tree = createJTree(tree, pathList, rootNode, treeModel);
     	}
     	tree.setRowHeight(25);
+    	createPopupMenu();
+    	//tree.setComponentPopupMenu(popupMenu);
     }
     
     private DefaultMutableTreeNode generateTreeNode(FSRemoteFile rootFile, DefaultMutableTreeNode parent) {
@@ -68,6 +143,10 @@ public class FSRemoteFileTree {
 	protected void refreshTreeModel(FSRemoteFile rootFile) {
 		DefaultTreeModel model = ((DefaultTreeModel) getTree().getModel());
 		
+		if(model == null) {
+			System.out.println("The current tree model is null");
+		}
+		
 		// Save which nodes are expanded;
 		String expandedNodes = "";
 		for(int i=0;i < getTree().getRowCount(); i++) {
@@ -110,6 +189,4 @@ public class FSRemoteFileTree {
 		return tree.getModel();
 	}
 
-	
-	
 }

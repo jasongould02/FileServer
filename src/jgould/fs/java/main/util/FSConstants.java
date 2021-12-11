@@ -21,6 +21,9 @@ public class FSConstants {
 	public static final String FILE = "FILE";
 	public static final String FOLDER = "FOLDER";
 	
+	public static final String CLIENT_TREE = "CLIENT_TREE";
+	public static final String SERVER_TREE = "SERVER_TREE";	
+	
 	private FSConstants() {}
 	
 	public static void setTrashBin(String path) {

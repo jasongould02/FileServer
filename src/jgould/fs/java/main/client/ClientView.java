@@ -122,12 +122,12 @@ public class ClientView {
 			e.printStackTrace();
 		}
 		
-		serverTree = new FSRemoteFileTree(client.getRemotePathList());
+		serverTree = new FSRemoteFileTree(FSConstants.SERVER_TREE, client.getRemotePathList());
 		JScrollPane serverJTreeScrollPane = new JScrollPane(serverTree.getTree());
         serverJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         serverJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
-        clientTree = new FSRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace()));
+        clientTree = new FSRemoteFileTree(FSConstants.CLIENT_TREE, FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace()));
 		JScrollPane clientJTreeScrollPane = new JScrollPane(clientTree.getTree());
 		clientJTreeScrollPane.setMinimumSize(new Dimension(1000, 100));
         clientJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -156,25 +156,18 @@ public class ClientView {
         c.gridy = 0;
 		mainPanel.add(clientJTreeScrollPane, c);
 		
-		/*c.fill = GridBagConstraints.HORIZONTAL;
-        c.gridx = 3;
-        c.gridy = 0;*/
-        /*requestFilesButton = new JButton("Request");
-		requestFilesButton.addActionListener(requestActionListener);
-		mainPanel.add(requestFilesButton, c);*/
-		
 		frame.add(mainPanel);
 		mainPanel.setMinimumSize(mainPanel.getSize());
 		
 		frame.setVisible(true);
 
-		for(File temp : getClient().getFSWorkspace().getWorkspace().listFiles()) {
+		/*for(File temp : getClient().getFSWorkspace().getWorkspace().listFiles()) {
 			try {
 				System.out.println("Canonical:" + temp.getCanonicalPath() + ":Absolute:"+temp.getAbsolutePath()+":Path:"+temp.getPath());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
+		}*/
 		
 		serverTree.getTree().setBorder(new EmptyBorder(0,10,0,10));
 		clientTree.getTree().setBorder(new EmptyBorder(0,10,0,10));
@@ -188,6 +181,36 @@ public class ClientView {
 		this.client.addFSRemoteFileTreeListener(fsRemoteFileTreeListener);
 		//this.refreshServerTreeModel();
 		serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
+		
+		/***
+		 * If ActionListeners aren't added before the ComponentPopupMenu is set, then they aren't actually added even though
+		 * MouseListeners can be added to Components after the Component has been added to a parent object. 
+		 * 
+		 ***/
+		clientTree.createPopupMenu();
+		serverTree.createPopupMenu();
+		
+		clientTree.getPullItem().addActionListener(filePullButtonActionListener);
+		serverTree.getPullItem().addActionListener(filePullButtonActionListener);
+		
+		clientTree.getPushItem().addActionListener(filePushButtonActionListener);
+		serverTree.getPushItem().addActionListener(filePushButtonActionListener);
+		
+		clientTree.getRemoveItem().addActionListener(fileDeleteButtonActionListener);
+		serverTree.getRemoveItem().addActionListener(fileDeleteButtonActionListener);
+		
+		/** TODO: Need to finish Rename feature first */
+		//clientTree.getRenameItem().addActionListener(fileRenameButtonActionListener);
+		//serverTree.getRenameItem().addActionListener(fileRenameButtonActionListener);
+
+		clientTree.addMenu();
+		serverTree.addMenu();
+		clientTree.getTree().setComponentPopupMenu(clientTree.getPopupMenu());
+		serverTree.getTree().setComponentPopupMenu(serverTree.getPopupMenu());
+		
+		//clientTree.getDownloadItem().addActionListener(this.filePullButtonActionListener);
+		//serverTree.getDownloadItem().addActionListener(this.filePullButtonActionListener);
+		
 	}
 	
 	private JPanel createCenterPanel() {
@@ -264,6 +287,26 @@ public class ClientView {
 	
 	public Client getClient() {
 		return client;
+	}
+	
+	public void clearTreeSelections() {
+		this.clientTree.getTree().clearSelection();
+		this.serverTree.getTree().clearSelection();
+		
+		clientJTreeSelection = null;
+		serverJTreeSelection = null;
+		
+		updateCenterPanelButtons();
+	}
+	
+	public void updateTrees() {
+		//serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
+		if(serverTree != null) {
+			serverTree.refreshTreeModel(client.getRemoteFileTree());
+		}
+		if(clientTree != null) {
+			clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
+		}
 	}
 	
 	private ActionListener requestActionListener = new ActionListener() {
@@ -410,33 +453,15 @@ public class ClientView {
 			if(e.getComponent() != null) {
 				System.out.println("e.getComponent == " + e.getComponent().getName()+ e.getComponent().getComponentListeners().length);
 			}
-			System.out.println("selected:isTemporary()" +e.isTemporary());
+			//System.out.println("selected:isTemporary()" +e.isTemporary());
 		}
 		@Override
 		public void focusLost(FocusEvent e) {
-			System.out.println("selected:isTemporary()" +e.isTemporary());
+			//System.out.println("selected:isTemporary()" +e.isTemporary());
 		}
 	};
 
-	public void clearTreeSelections() {
-		this.clientTree.getTree().clearSelection();
-		this.serverTree.getTree().clearSelection();
-		
-		clientJTreeSelection = null;
-		serverJTreeSelection = null;
-		
-		updateCenterPanelButtons();
-	}
 	
-	public void updateTrees() {
-		//serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
-		if(serverTree != null) {
-			serverTree.refreshTreeModel(client.getRemoteFileTree());
-		}
-		if(clientTree != null) {
-			clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
-		}
-	}
 	
 	FSRemoteFileTreeListener fsRemoteFileTreeListener = new FSRemoteFileTreeListener() {
 		@Override
@@ -444,22 +469,32 @@ public class ClientView {
 			System.out.println("called");
 			updateTrees();
 		}
+
+		@Override
+		public void popupMenuOpened() {
+			
+		}
 	};
 	
 	MouseAdapter clientTreeMouseListener = new MouseAdapter() {
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
-				FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) clientTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
-				if(file != null && clientJTreeSelection != null) {
+				DefaultMutableTreeNode treeNode = ((DefaultMutableTreeNode) clientTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent());
+				FSRemoteFile file = ((FSRemoteFile) treeNode.getUserObject());
+				
+				
+				if(file != null && clientJTreeSelection != null && SwingUtilities.isLeftMouseButton(e)) {
 					if(file.getPath().equals(clientJTreeSelection.getPath())) {
 						System.out.println("node is already selected, deselecting");
-						clearTreeSelections();
+						clientJTreeSelection = null;
+						clientTree.getTree().clearSelection();
+						//clearTreeSelections();
 						updateCenterPanelButtons();
 						return;
 					}
-				}
-				
+				} 
+					
 				if(file != null) {
 					clientJTreeSelection = file;
 				}
@@ -479,7 +514,9 @@ public class ClientView {
 				FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) serverTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
 				if(file != null && serverJTreeSelection != null) {
 					if(file.getPath().equals(serverJTreeSelection.getPath())) {
-						clearTreeSelections();
+						serverJTreeSelection = null;
+						serverTree.getTree().clearSelection();
+						//clearTreeSelections();
 						updateCenterPanelButtons();
 						return;
 					}

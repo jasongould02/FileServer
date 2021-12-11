@@ -4,4 +4,6 @@ public interface FSRemoteFileTreeListener {
 
 	public void remoteFileTreeChange();
 	
+	public void popupMenuOpened();
+	
 }
