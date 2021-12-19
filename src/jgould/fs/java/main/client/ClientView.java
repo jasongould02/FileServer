@@ -349,11 +349,11 @@ public class ClientView {
 		public void actionPerformed(ActionEvent e) {
 			try {
 				String destination;
-				if(FSRemoteFileTreeUtil.getExtension(clientJTreeSelection) == null) { // sending a folder
+				if(FSUtil.getExtension(clientJTreeSelection.getName()) == null) { // sending a folder
 					if(serverJTreeSelection == null || serverJTreeSelection.getPath().isEmpty()) {
 						destination = clientJTreeSelection.getName(); // server_workspace_rootfolder + separator + clientjtreeselection name
 					} else {
-						if(FSRemoteFileTreeUtil.getExtension(serverJTreeSelection) == null) { // sending directory to a folder
+						if(FSUtil.getExtension(serverJTreeSelection.getName()) == null) { // sending directory to a folder
 							destination = serverJTreeSelection.getPath() + File.separator + clientJTreeSelection.getName();
 						} else { // sending file to parent folder of a file
 							destination = FSUtil.getParent(serverJTreeSelection.getPath()) + File.separator + clientJTreeSelection.getName();
@@ -365,7 +365,7 @@ public class ClientView {
 					if(serverJTreeSelection == null || serverJTreeSelection.getPath().isEmpty()) {
 						destination = "";
 					} else {
-						if(FSRemoteFileTreeUtil.getExtension(serverJTreeSelection) == null) { // sending file to a folder
+						if(FSUtil.getExtension(serverJTreeSelection.getName()) == null) { // sending file to a folder
 							destination = serverJTreeSelection.getPath();
 						} else { // sending file to parent folder of a file
 							destination = FSUtil.getParent(serverJTreeSelection.getPath());
@@ -394,7 +394,7 @@ public class ClientView {
 						client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.checkDirectoryEnding(client.getFSWorkspace().getWorkspace().getPath()));
 					} else {
 						if(clientJTreeSelection.getPath() != null) {
-							if(FSRemoteFileTreeUtil.getExtension(clientJTreeSelection) == null) { // sending file to a folder
+							if(FSUtil.getExtension(clientJTreeSelection.getName()) == null) { // sending file to a folder
 								client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
 							} else {
 								client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.getParent(clientJTreeSelection.getPath()));

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import jgould.fs.java.main.client.FSRemoteFile;
+
 public class FSUtil {
 
 	private FSUtil() {}
@@ -67,6 +69,12 @@ public class FSUtil {
 		}
 	}
 	
+	/**
+	 * Returns the parent folder of the given path (if the path was "C:\test\folder\file.txt" then "C:\test\folder\" would be returned)
+	 * 
+	 * @param path
+	 * @return parent folder of the path
+	 */
 	public static String getParent(String path) {
 		/*if(destination.endsWith(filename)) {
 			System.out.println("lastIndexof:" + destination.lastIndexOf(filename));
@@ -83,6 +91,21 @@ public class FSUtil {
 		
 		//System.out.println("removeFileName:" + path);
 		return path;
+	}
+	
+	/**
+	 * Returns file extension, if the given file name has no extension then null is returned
+	 * @param filename the name of a file {@link FSRemoteFile#getName()} or the path of a file
+	 * 
+	 * @return file extension
+	 */
+	public static String getExtension(String filename) {
+		if(filename != null && !filename.isEmpty()) {
+			if(filename.contains(".")) {
+				return filename.substring(filename.lastIndexOf("."));
+			}
+		}
+		return null;
 	}
 	
 	/**
