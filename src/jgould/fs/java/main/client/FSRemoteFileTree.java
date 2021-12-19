@@ -36,20 +36,7 @@ public class FSRemoteFileTree {
     	pushItem = new JMenuItem("Upload");
     	removeItem = new JMenuItem("Remove");
     	
-    	if(TREE_TYPE.equals(FSConstants.CLIENT_TREE)) {
-    		popupMenu.add(renameItem);
-        	popupMenu.add(pushItem);
-        	popupMenu.add(removeItem);
-        	
-        	pullItem = null;
-    	} else if(TREE_TYPE.equals(FSConstants.SERVER_TREE)) {
-    		popupMenu.add(renameItem);
-        	popupMenu.add(pullItem);
-        	popupMenu.add(removeItem);
-        	
-        	pushItem = null;
-    	}
-    	
+    	System.out.println("created popup tree");
     	return popupMenu;
     }
     
@@ -66,6 +53,8 @@ public class FSRemoteFileTree {
         	popupMenu.add(removeItem);
         	
         	pushItem = null;
+    	} else {
+    		System.out.println("error creating the pop up menu");
     	}
     }
     
@@ -97,7 +86,7 @@ public class FSRemoteFileTree {
     		tree = createJTree(tree, pathList, rootNode, treeModel);
     	}
     	tree.setRowHeight(25);
-    	createPopupMenu();
+    	//createPopupMenu();
     	//tree.setComponentPopupMenu(popupMenu);
     }
     
