@@ -119,6 +119,10 @@ public class Client implements Runnable {
 		write(FSConstants.REMOVE + FSConstants.DELIMITER + pathToFile + filename);
 	}
 	
+	protected void sendFileRename(String sourcePath, String sourceName, String targetName) {
+		write(FSConstants.RENAME + FSConstants.DELIMITER + sourcePath + FSConstants.DELIMITER + sourceName + FSConstants.DELIMITER + targetName);
+	}
+	
 	/**
 	 * If the Client's writer is not null, this method will write the given string and append '\r\n'.
 	 * This method flushes after the String has been written

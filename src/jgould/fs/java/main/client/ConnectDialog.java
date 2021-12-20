@@ -177,7 +177,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 					ConnectionHistory.setMostRecentConnectionName(serverName);
 				}
 				setVisible(false);
-				cv.updateTrees();
+				cv.refreshTrees();
 			} else {
 				System.out.println("CLIENT IS NOT CONNECTED");
 				System.out.println("name: [" + serverName + "]" + "\tlength: [" + serverName.length() + "]");

@@ -54,7 +54,7 @@ public class FSRemoteFileTree {
         	
         	pushItem = null;
     	} else {
-    		System.out.println("error creating the pop up menu");
+    		System.out.println("Invalid TREE_TYPE.");
     	}
     }
     

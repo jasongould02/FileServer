@@ -16,6 +16,7 @@ public class FSConstants {
 	public static final String DIRECTORY_LIST = "DIRECTORY_LIST";
 	public static final String SEND = "SEND";
 	public static final String REMOVE = "REMOVE";
+	public static final String RENAME = "RENAME";
 	public static final String MOVE = "MOVE";
 	
 	public static final String FILE = "FILE";

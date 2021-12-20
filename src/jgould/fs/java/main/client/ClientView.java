@@ -22,9 +22,11 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -43,8 +45,9 @@ public class ClientView {
 	
 	private JPanel mainPanel;
 	
-	private FSWorkspace clientWorkspace;
+	//private FSWorkspace clientWorkspace;
 	
+	// Top menu bar 
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
 	private JMenuItem connectItem;
@@ -60,8 +63,8 @@ public class ClientView {
     private JPanel centerPanel;
     private JButton filePushButton;
     private JButton filePullButton;
-    private JButton refreshTreesButton;
     private JButton fileDeleteButton;
+    private JButton refreshTreesButton;
     
     private GridBagLayout layout;
     
@@ -124,11 +127,11 @@ public class ClientView {
 		
 		serverTree = new FSRemoteFileTree(FSConstants.SERVER_TREE, client.getRemotePathList());
 		JScrollPane serverJTreeScrollPane = new JScrollPane(serverTree.getTree());
-        serverJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        serverJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+	    serverJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+	    serverJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
 		
         clientTree = new FSRemoteFileTree(FSConstants.CLIENT_TREE, FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace()));
-		JScrollPane clientJTreeScrollPane = new JScrollPane(clientTree.getTree());
+        JScrollPane clientJTreeScrollPane = new JScrollPane(clientTree.getTree());
 		clientJTreeScrollPane.setMinimumSize(new Dimension(1000, 100));
         clientJTreeScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         clientJTreeScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -199,12 +202,14 @@ public class ClientView {
 		clientTree.getRemoveItem().addActionListener(fileDeleteButtonActionListener);
 		serverTree.getRemoveItem().addActionListener(fileDeleteButtonActionListener);
 		
-		/** TODO: Need to finish Rename feature first */
-		//clientTree.getRenameItem().addActionListener(fileRenameButtonActionListener);
-		//serverTree.getRenameItem().addActionListener(fileRenameButtonActionListener);
-
+		clientTree.getRenameItem().addActionListener(fileRenameButtonActionListener);
+		serverTree.getRenameItem().addActionListener(fileRenameButtonActionListener);
+		
 		clientTree.addMenu();
 		serverTree.addMenu();
+		
+		clientTree.getPopupMenu().setEnabled(true);
+		serverTree.getPopupMenu().setEnabled(true);
 		clientTree.getTree().setComponentPopupMenu(clientTree.getPopupMenu());
 		serverTree.getTree().setComponentPopupMenu(serverTree.getPopupMenu());
 		
@@ -235,7 +240,7 @@ public class ClientView {
 		filePushButton.addActionListener(filePushButtonActionListener);
 		filePullButton.addActionListener(filePullButtonActionListener);
 		fileDeleteButton.addActionListener(fileDeleteButtonActionListener);
-		refreshTreesButton.addActionListener(requestActionListener);
+		refreshTreesButton.addActionListener(refreshActionListener);
 		
 		centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
 		
@@ -269,20 +274,6 @@ public class ClientView {
 				fileDeleteButton.setEnabled(false);
 			}
 		}
-		
-		/*if(clientJTreeSelection != null && serverJTreeSelection != null) {
-			filePushButton.setEnabled(true);
-			filePullButton.setEnabled(true);
-			fileDeleteButton.setEnabled(false);
-		} else if(clientJTreeSelection != null || serverJTreeSelection != null) {
-			filePushButton.setEnabled(false);
-			filePullButton.setEnabled(false);
-			fileDeleteButton.setEnabled(true);
-		} else {
-			filePushButton.setEnabled(false);
-			filePullButton.setEnabled(false);
-			fileDeleteButton.setEnabled(false);
-		}
 	}
 	
 	public Client getClient() {
@@ -299,7 +290,7 @@ public class ClientView {
 		updateCenterPanelButtons();
 	}
 	
-	public void updateTrees() {
+	public void refreshTrees() {
 		//serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
 		if(serverTree != null) {
 			serverTree.refreshTreeModel(client.getRemoteFileTree());
@@ -309,7 +300,7 @@ public class ClientView {
 		}
 	}
 	
-	private ActionListener requestActionListener = new ActionListener() {
+	private ActionListener refreshActionListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
@@ -428,7 +419,36 @@ public class ClientView {
 					client.getFSWorkspace().deleteFile(clientJTreeSelection.getPath(), StandardCopyOption.REPLACE_EXISTING);
 					clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
 				}
-				updateTrees();
+				refreshTrees();
+				clearTreeSelections();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+	};
+	
+	private ActionListener fileRenameButtonActionListener = new ActionListener() {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			try {
+				/*if(clientJTreeSelection == null && serverJTreeSelection == null) { // shouldn't ever happen
+					System.out.println("Error: Attempt to rename file with no selections.");
+					return;
+				}*/
+				System.out.println("\nRename source:" + e.getSource() + "\n");
+				//String newFileName = JOptionPane.showInputDialog("Enter new name:\n");
+				String newFileName;
+				if(clientJTreeSelection == null && serverJTreeSelection != null) { // Send rename file command to server
+					newFileName = JOptionPane.showInputDialog(clientTree.getPopupMenu(), "Enter new name:\n", serverJTreeSelection.getName());
+					client.sendFileRename(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), newFileName);
+					client.sendDirectoryListingRequest();
+					serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
+				} else if(clientJTreeSelection != null && serverJTreeSelection == null) { // rename local file
+					newFileName = JOptionPane.showInputDialog(serverTree.getPopupMenu(), "Enter new name:\n", clientJTreeSelection.getName());
+					client.getFSWorkspace().renameFile(clientJTreeSelection.getPath(), clientJTreeSelection.getName(), newFileName, StandardCopyOption.REPLACE_EXISTING);
+					clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
+				}
+				refreshTrees();
 				clearTreeSelections();
 			} catch (Exception e1) {
 				e1.printStackTrace();
@@ -467,7 +487,7 @@ public class ClientView {
 		@Override
 		public void remoteFileTreeChange() {
 			System.out.println("called");
-			updateTrees();
+			refreshTrees();
 		}
 
 		@Override

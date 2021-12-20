@@ -101,7 +101,17 @@ public class Worker implements Runnable {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			
+		} else if(input.startsWith(FSConstants.RENAME)) {
+			String[] split = input.split(FSConstants.DELIMITER);
+			String sourcePath = split[1];
+			String sourceName = split[2];
+			String targetName = split[3];
+			try {
+				Server.getFSWorkspace().renameFile(sourcePath, sourceName, targetName, StandardCopyOption.REPLACE_EXISTING);
+			} catch(Exception e) {
+				System.out.println("Failed to rename file");
+				e.printStackTrace();
+			}
 		}
 	}
 	

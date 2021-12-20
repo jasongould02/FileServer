@@ -41,6 +41,14 @@ public class FSWorkspace {
 		}
 	}
 	
+	public void renameFile(String sourcePath, String sourceName, String targetName, StandardCopyOption copyOption) throws IOException {
+		if(!sourcePath.endsWith(sourceName)) {
+			sourcePath = sourcePath + File.separator + sourceName;
+		}
+		Path s = Paths.get(sourcePath);
+		Files.move(s, s.resolveSibling(targetName), copyOption);
+	}
+	
 	/**
 	 * Removes file from the directory and transfers the content to a trash bin the path to which is set in {@link FSConstants#setTrashBin(String)}
 	 * @param filename
