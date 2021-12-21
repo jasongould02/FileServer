@@ -181,7 +181,7 @@ public class Client implements Runnable {
 			this.remotePathList.clear();
 			remotePathList.addAll(listing);
 			this.setRemoteFileTree(FSRemoteFileTreeUtil.constructRemoteFileTree(listing));
-		}
+		} 
 		for(FSRemoteFileTreeListener l : fsRemoteFileTreeListeners) {
 			l.remoteFileTreeChange();
 		}

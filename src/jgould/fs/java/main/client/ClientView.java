@@ -34,7 +34,6 @@ import org.json.JSONException;
 
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
-import jgould.fs.java.main.util.FSWorkspace;
 
 public class ClientView {
 
@@ -188,7 +187,6 @@ public class ClientView {
 		/***
 		 * If ActionListeners aren't added before the ComponentPopupMenu is set, then they aren't actually added even though
 		 * MouseListeners can be added to Components after the Component has been added to a parent object. 
-		 * 
 		 ***/
 		clientTree.createPopupMenu();
 		serverTree.createPopupMenu();
@@ -483,7 +481,7 @@ public class ClientView {
 
 	
 	
-	FSRemoteFileTreeListener fsRemoteFileTreeListener = new FSRemoteFileTreeListener() {
+	private FSRemoteFileTreeListener fsRemoteFileTreeListener = new FSRemoteFileTreeListener() {
 		@Override
 		public void remoteFileTreeChange() {
 			System.out.println("called");
@@ -496,7 +494,7 @@ public class ClientView {
 		}
 	};
 	
-	MouseAdapter clientTreeMouseListener = new MouseAdapter() {
+	private MouseAdapter clientTreeMouseListener = new MouseAdapter() {
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
@@ -527,7 +525,7 @@ public class ClientView {
 		}
 	};
 	
-	MouseAdapter serverTreeMouseListener = new MouseAdapter() {
+	private MouseAdapter serverTreeMouseListener = new MouseAdapter() {
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
@@ -554,7 +552,7 @@ public class ClientView {
 		
 	};
 	
-	WindowAdapter windowListener = new WindowAdapter() {
+	private WindowAdapter windowListener = new WindowAdapter() {
 		@Override
 	    public void windowClosing(WindowEvent e) {
 			try {

@@ -17,7 +17,7 @@ import jgould.fs.java.main.util.FSUtil;
 
 public class Worker implements Runnable {
 
-	private static final int BUFFER_SIZE = 1024;
+	//private static final int BUFFER_SIZE = 1024;
 	private int workerID;
 	private Thread thread;
 	private boolean running = false;

@@ -16,7 +16,7 @@ import jgould.fs.java.main.util.FSConstants;
 
 public class FSRemoteFileTree {
 
-	private final String TREE_TYPE; 
+	private final int TREE_TYPE; 
 	
     private JTree tree = null;
     private DefaultMutableTreeNode rootNode = null;
@@ -28,6 +28,10 @@ public class FSRemoteFileTree {
     private JMenuItem pushItem = null;
     private JMenuItem removeItem = null;
     
+    /**
+     * Used to setup popup menu and instantiate JMenuItems
+     * @return JPopupMenu instance
+     */
     public JPopupMenu createPopupMenu() {
     	popupMenu = new JPopupMenu();
     	
@@ -40,14 +44,17 @@ public class FSRemoteFileTree {
     	return popupMenu;
     }
     
+    /**
+     * Adds the correct menu items depending on the {@link FSRemoteFileTree#TREE_TYPE}
+     */
     public void addMenu() {
-    	if(TREE_TYPE.equals(FSConstants.CLIENT_TREE)) {
+    	if(TREE_TYPE == FSConstants.CLIENT_TREE) {
     		popupMenu.add(renameItem);
         	popupMenu.add(pushItem);
         	popupMenu.add(removeItem);
         	
         	pullItem = null;
-    	} else if(TREE_TYPE.equals(FSConstants.SERVER_TREE)) {
+    	} else if(TREE_TYPE == FSConstants.SERVER_TREE) {
     		popupMenu.add(renameItem);
         	popupMenu.add(pullItem);
         	popupMenu.add(removeItem);
@@ -80,7 +87,7 @@ public class FSRemoteFileTree {
     
     //private void updatePopupMenu() {}
     
-    public FSRemoteFileTree(final String TREE_TYPE, ArrayList<String> pathList) {
+    public FSRemoteFileTree(final int TREE_TYPE, ArrayList<String> pathList) {
     	this.TREE_TYPE = TREE_TYPE;
     	synchronized(this) {
     		tree = createJTree(tree, pathList, rootNode, treeModel);
