@@ -41,12 +41,34 @@ public class FSWorkspace {
 		}
 	}
 	
+	
 	public void renameFile(String sourcePath, String sourceName, String targetName, StandardCopyOption copyOption) throws IOException {
+		String originalPath = null; // The sourcePath without the sourceName attached to the end of the String
+		String actualName = null; // only changed from null if the String targetName contains File.separator chars (it is a new path)
+		String addedTargetPath = null; // The sourcePath + new folders inside the TargetName (if its a new name) and
+		
 		if(!sourcePath.endsWith(sourceName)) {
+			originalPath = sourcePath;
 			sourcePath = sourcePath + File.separator + sourceName;
+		} else { // sourcePath contains the sourceName
+			originalPath = sourcePath.substring(0, sourcePath.lastIndexOf(File.separator));
 		}
-		Path s = Paths.get(sourcePath);
-		Files.move(s, s.resolveSibling(targetName), copyOption);
+		
+		if(targetName.contains(File.separator)) { // contains new path
+			actualName = targetName.substring(targetName.lastIndexOf(File.separator));
+			
+			String targetPath = targetName.substring(0, targetName.lastIndexOf(File.separator)); // This is the the added folders (removes the new file name) the user wishes to create when renaming the source file
+			
+			// Create the new folders required to place the renamed file in
+			addedTargetPath = originalPath + File.separator + targetPath;
+			File pathToNewTarget = new File(addedTargetPath);
+			pathToNewTarget.mkdirs();
+			
+			Files.move(Paths.get(sourcePath), Paths.get(addedTargetPath + File.separator + actualName), copyOption);
+		} else { // targetName doesn't contain any new folders
+			Path source = Paths.get(sourcePath);
+			Files.move(source, source.resolveSibling(targetName), copyOption);
+		}
 	}
 	
 	/**
