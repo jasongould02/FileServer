@@ -32,6 +32,11 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.json.JSONException;
 
+import jgould.fs.java.main.client.connection.ConnectionHistory;
+import jgould.fs.java.main.client.remote.FSRemoteFile;
+import jgould.fs.java.main.client.remote.FSRemoteFileTree;
+import jgould.fs.java.main.client.remote.FSRemoteFileTreeListener;
+import jgould.fs.java.main.client.remote.FSRemoteFileTreeUtil;
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
 
@@ -174,13 +179,11 @@ public class ClientView {
 		serverTree.getTree().setBorder(new EmptyBorder(0,10,0,10));
 		clientTree.getTree().setBorder(new EmptyBorder(0,10,0,10));
 		
-		clientTree.addFocusListener(clientJTreeFocusListener);
-		serverTree.addFocusListener(serverJTreeFocusListener);
-		//clientTree.addTreeSelectionListener(clientJTreeSelectionListener);
-		//serverTree.addTreeSelectionListener(serverJTreeSelectionListener);
+		//clientTree.addFocusListener(clientJTreeFocusListener);
+		//serverTree.addFocusListener(serverJTreeFocusListener);
 		clientTree.addMouseListener(clientTreeMouseListener);
 		serverTree.addMouseListener(serverTreeMouseListener);
-		this.client.addFSRemoteFileTreeListener(fsRemoteFileTreeListener);
+		this.client.setFSRemoteFileTreeListener(fsRemoteFileTreeListener);
 		//this.refreshServerTreeModel();
 		serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
 		
@@ -213,7 +216,6 @@ public class ClientView {
 		
 		//clientTree.getDownloadItem().addActionListener(this.filePullButtonActionListener);
 		//serverTree.getDownloadItem().addActionListener(this.filePullButtonActionListener);
-		
 	}
 	
 	private JPanel createCenterPanel() {
@@ -289,7 +291,6 @@ public class ClientView {
 	}
 	
 	public void refreshTrees() {
-		//serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
 		if(serverTree != null) {
 			serverTree.refreshTreeModel(client.getRemoteFileTree());
 		}
@@ -429,12 +430,7 @@ public class ClientView {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
-				/*if(clientJTreeSelection == null && serverJTreeSelection == null) { // shouldn't ever happen
-					System.out.println("Error: Attempt to rename file with no selections.");
-					return;
-				}*/
 				System.out.println("\nRename source:" + e.getSource() + "\n");
-				//String newFileName = JOptionPane.showInputDialog("Enter new name:\n");
 				String newFileName;
 				if(clientJTreeSelection == null && serverJTreeSelection != null) { // Send rename file command to server
 					newFileName = JOptionPane.showInputDialog(clientTree.getPopupMenu(), "Enter new name:\n", serverJTreeSelection.getName());
@@ -454,43 +450,11 @@ public class ClientView {
 		}
 	};
 	
-	private FocusListener serverJTreeFocusListener = new FocusListener() {
-		@Override
-		public void focusGained(FocusEvent e) {
-			System.out.println("selected:isTemporary()" +e.isTemporary());
-		}
-		@Override
-		public void focusLost(FocusEvent e) {
-			System.out.println("selected:isTemporary()" +e.isTemporary());
-		}
-	};
-	
-	private FocusListener clientJTreeFocusListener = new FocusListener() {
-		@Override
-		public void focusGained(FocusEvent e) {
-			if(e.getComponent() != null) {
-				System.out.println("e.getComponent == " + e.getComponent().getName()+ e.getComponent().getComponentListeners().length);
-			}
-			//System.out.println("selected:isTemporary()" +e.isTemporary());
-		}
-		@Override
-		public void focusLost(FocusEvent e) {
-			//System.out.println("selected:isTemporary()" +e.isTemporary());
-		}
-	};
-
-	
-	
 	private FSRemoteFileTreeListener fsRemoteFileTreeListener = new FSRemoteFileTreeListener() {
 		@Override
-		public void remoteFileTreeChange() {
+		public void workspaceChanged() {
 			System.out.println("called");
 			refreshTrees();
-		}
-
-		@Override
-		public void popupMenuOpened() {
-			
 		}
 	};
 	
@@ -501,9 +465,9 @@ public class ClientView {
 				DefaultMutableTreeNode treeNode = ((DefaultMutableTreeNode) clientTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent());
 				FSRemoteFile file = ((FSRemoteFile) treeNode.getUserObject());
 				
-				
 				if(file != null && clientJTreeSelection != null && SwingUtilities.isLeftMouseButton(e)) {
 					if(file.getPath().equals(clientJTreeSelection.getPath())) {
+						System.out.println("ClientTree MouseListener: A node is already selecting, deselecting node");
 						System.out.println("node is already selected, deselecting");
 						clientJTreeSelection = null;
 						clientTree.getTree().clearSelection();
@@ -511,7 +475,15 @@ public class ClientView {
 						updateCenterPanelButtons();
 						return;
 					}
-				} 
+				}
+				
+				if(SwingUtilities.isRightMouseButton(e)) {
+					System.out.println("right click detected on clientTree");
+					clearTreeSelections();
+					clientTree.getTree().clearSelection();
+					clientJTreeSelection = null;
+					updateCenterPanelButtons();
+				}
 					
 				if(file != null) {
 					clientJTreeSelection = file;

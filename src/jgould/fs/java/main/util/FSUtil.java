@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import jgould.fs.java.main.client.FSRemoteFile;
+import jgould.fs.java.main.client.remote.FSRemoteFile;
 
 public class FSUtil {
 

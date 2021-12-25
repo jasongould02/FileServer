@@ -11,7 +11,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
 
-import jgould.fs.java.main.client.FSRemoteFileTreeUtil;
+import jgould.fs.java.main.client.remote.FSRemoteFileTreeUtil;
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
 
@@ -49,11 +49,11 @@ public class Worker implements Runnable {
 				} else if(src.isDirectory()) {
 					write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(src.getName()));
 					String dest = destination + File.separator + src.getName(); 
+					System.out.println("root destination:["+dest+ "]");
 					sendDirectory(src, dest, dest);
 				}
 			} 
 		} else if(input.startsWith(FSConstants.DIRECTORY_LIST_REQUEST)) {
-			//System.out.println("listing requested");
 			ArrayList<String> listing = FSRemoteFileTreeUtil.searchDirectory(Server.getFSWorkspace().getWorkspace());
 			String string_listing = "";
 			for(String s : listing) {
@@ -62,7 +62,6 @@ public class Worker implements Runnable {
 			sendListing(string_listing);
 		} else if(input.startsWith(FSConstants.FILE)) {
 			String[] split = input.split(FSConstants.DELIMITER);
-			//System.out.println("command length:" + split.length);
 			if(split.length != 5) {
 				System.out.println("Error in command received");
 				return;
@@ -116,16 +115,13 @@ public class Worker implements Runnable {
 	}
 	
 	private void sendListing(String listing) throws IOException {
-		//System.out.println("sending:"+FSConstants.DIRECTORY_LIST + ":" + listing);
 		write(FSConstants.DIRECTORY_LIST + ":" + listing);
 	}
 	
 	private void sendDirectory(File file, final String originalDestination, String destination) throws IOException {
 		for(File f : file.listFiles()) {
 			if(f.isDirectory()) {
-				//System.out.println("now sending to new folder:" + destination + ":" + f.getName());
 				write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(f.getName()));
-				//System.out.println("moving to:"+destination+f.getName());
 				sendDirectory(f, originalDestination, destination + File.separator + f.getName());
 			} else {
 				sendFile(f, destination);

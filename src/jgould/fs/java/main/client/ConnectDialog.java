@@ -1,7 +1,9 @@
 package jgould.fs.java.main.client;
 
 import java.awt.Dimension;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -10,6 +12,7 @@ import java.io.IOException;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -17,8 +20,18 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import jgould.fs.java.main.client.connection.Connection;
+import jgould.fs.java.main.client.connection.ConnectionHistory;
+
 public class ConnectDialog extends JDialog implements ActionListener {
 
+	private JPanel mainPanel;
+	//private GridLayout layout;
+	private GridBagLayout layout;
+	private ClientView cv;
+	
+	private JComboBox<Connection> dropDownMenu;
+	
 	private JTextField serverNameField;
 	private JTextField serverIPField;
 	private JTextField serverPortField;
@@ -27,19 +40,36 @@ public class ConnectDialog extends JDialog implements ActionListener {
 	private JButton connectButton;
 	private JButton cancelButton;
 	
-	private JPanel mainPanel;
-	private GridLayout layout;
-	
-	private String serverName;
-	private String serverIP;
-	private String serverPort;
-	private String serverTimeout;
-	
 	private JCheckBox rememberServerCheckBox;
 	private boolean rememberServer = false;
 	
-	private ClientView cv;
-
+	private ItemListener dropDownMenuListener = new ItemListener() {
+		@Override
+		public void itemStateChanged(ItemEvent e) {
+			JComboBox<Connection> source = null;
+			if(e.getSource() instanceof JComboBox<?>) {
+				source = (JComboBox<Connection>) e.getSource();
+				setConnection(((Connection) source.getSelectedItem()));
+			} else {
+				System.out.println("ConnectDialog unable to cast item state change event source");
+			}
+		}
+		
+	};
+	
+	private JComboBox<Connection> createDropDownMenu(JComboBox<Connection> dropDownMenu) {
+		dropDownMenu = new JComboBox<Connection>();
+		Connection[] connections = ConnectionHistory.getAvailableConnections();
+		
+		for(Connection c : connections) { // Since ConnectDialog is instantiated everytime it is shown, the connections are always fetched from ConnectionHistory
+			dropDownMenu.addItem(c);
+		}
+		dropDownMenu.addItemListener(dropDownMenuListener);
+		
+		return dropDownMenu;
+	}
+	
+	
 	public ConnectDialog(ClientView cv, JFrame parent, boolean modal) {
 		super(parent, modal);
 		this.cv = cv;
@@ -47,19 +77,14 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		//this.setUndecorated(true);
 		
 		mainPanel = new JPanel();
-		layout = new GridLayout(0, 2, 10, 10);
+		//layout = new GridLayout(0, 2, 10, 10);
+		layout = new GridBagLayout();
 		mainPanel.setLayout(layout);
 		
 		serverNameField = new JTextField(20);
 		serverIPField = new JTextField(20);
 		serverPortField = new JTextField(10);
 		serverTimeoutField = new JTextField(10);
-		
-		// FOR TESTING
-		/*System.out.println("remove these");
-		serverIPField.setText("127.0.0.1");
-		serverPortField.setText("80");
-		serverTimeoutField.setText("5000");*/
 		
 		connectButton = new JButton("Connect");
 		cancelButton = new JButton("Cancel");
@@ -71,36 +96,74 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		Connection previousConnection = ConnectionHistory.getConnection(ConnectionHistory.getMostRecentConnectionName());
 		if(previousConnection == null) {
 			System.out.println("no previous connection found");
+			setConnection(null);
 		} else {
-			addConnectionToFields(previousConnection);
+			setConnection(previousConnection);
 			rememberServerCheckBox.setSelected(true);
 		}
 		
-		mainPanel.add(new JLabel("Server Name:"));
-		mainPanel.add(serverNameField);
+		GridBagConstraints c = new GridBagConstraints();
+		c.weightx = 1.0;
+		c.weighty = 1.0;
 		
-		mainPanel.add(new JLabel("Server IP:"));
-		mainPanel.add(serverIPField);
+		c.fill = GridBagConstraints.NONE;
+		if(ConnectionHistory.getConnectionCount() >= 2) { // Only show the dropdown menu if there is more than one option
+			c.gridx = 0;
+			c.gridy = 0;
+			c.gridwidth = 2;
+			mainPanel.add(this.createDropDownMenu(this.dropDownMenu), c);
+		}
 		
-		mainPanel.add(new JLabel("Port Number:"));
-		mainPanel.add(serverPortField);
+		c.gridwidth = 1;
+		// name field
+		mainPanel.add(new JLabel("Server Name:"), setGridBagConstraints(c, 0, 1));
+		mainPanel.add(serverNameField, setGridBagConstraints(c, 1, 1));
+		// ip row
+		mainPanel.add(new JLabel("Server IP:"), setGridBagConstraints(c, 0, 2));
+		mainPanel.add(serverIPField, setGridBagConstraints(c, 1, 2));
+		// port row
+		mainPanel.add(new JLabel("Port Number:"), setGridBagConstraints(c, 0, 3));
+		mainPanel.add(serverPortField, setGridBagConstraints(c, 1, 3));
+		// timeout row
+		mainPanel.add(new JLabel("Timeout:"), setGridBagConstraints(c, 0, 4));
+		mainPanel.add(serverTimeoutField, setGridBagConstraints(c, 1, 4));
 		
-		mainPanel.add(new JLabel("Timeout:"));
-		mainPanel.add(serverTimeoutField);
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 0;
+		c.gridy = 5;
+		c.insets = new Insets(0, 5, 0, 5);
+		mainPanel.add(connectButton, c);
 		
-		mainPanel.add(connectButton);
-		mainPanel.add(cancelButton);
+		c.gridx = 1;
+		c.gridy = 5;
+		mainPanel.add(cancelButton, c);
 		
-		mainPanel.add(rememberServerCheckBox);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.gridy = 6;
+		c.gridwidth = 2;
 		rememberServerCheckBox.addItemListener(rememberServerListener);
+		mainPanel.add(rememberServerCheckBox, c);
 		
 		connectButton.addActionListener(connectButtonListener);
 		
 		this.add(mainPanel);
-		mainPanel.setMinimumSize(new Dimension(250, 250));
+		mainPanel.setMinimumSize(new Dimension(275, 275));
 		this.setMinimumSize(mainPanel.getMinimumSize());
 		this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 	}
+	
+	private GridBagConstraints setGridBagConstraints(GridBagConstraints c, int x, int y) {
+		c.gridx = x;
+		c.gridy = y;
+		if(x == 0) {
+			c.fill = GridBagConstraints.NONE;
+		} else {
+			c.fill = GridBagConstraints.HORIZONTAL;
+		}
+		return c;
+	}
+	
 	
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -111,11 +174,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		return new String[] {serverNameField.getText(), serverIPField.getText(), serverPortField.getText(), serverTimeoutField.getText()};
 	}
 	
-	/*private Connection getMostRecentConnection() {
-		return ConnectionHistory.getConnection(ConnectionHistory.getMostRecentConnectionName());
-	}*/
-	
-	private void addConnectionToFields(Connection connection) {
+	private void setConnection(Connection connection) {
 		if(connection == null) {
 			clearTextFields();
 		} else {
@@ -126,7 +185,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		}
 	}
 	
-	public void clearTextFields() {
+	private void clearTextFields() {
 		serverNameField.setText("");
 		serverIPField.setText("");
 		serverPortField.setText("");
@@ -145,17 +204,13 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			
-			serverName = serverNameField.getText();
-			serverIP = serverIPField.getText();
-			serverPort = serverPortField.getText();
-			serverTimeout = serverTimeoutField.getText();
+			String serverName = serverNameField.getText();
+			String serverIP = serverIPField.getText();
+			String serverPort = serverPortField.getText();
+			String serverTimeout = serverTimeoutField.getText();
 			
-			if(serverName.length() == 0 || serverIP.length() == 0 || serverPort.length() == 0 || serverTimeout.length() == 0) {
-				// No input in at least one of the fields
-				/*System.out.println("name Length:" + serverName.length());
-				System.out.println("serverip length:" + serverIP.length());
-				System.out.println("serverport length:" + serverPort.length());
-				System.out.println("servertimeout length:" + serverTimeout.length());*/
+			if(serverName.length() == 0 || serverIP.length() == 0 || serverPort.length() == 0 || serverTimeout.length() == 0) { // One of the fields was left empty
+				System.out.println("One of the ConnectDialog fields was left empty");
 				return;
 			}
 			
@@ -187,21 +242,18 @@ public class ConnectDialog extends JDialog implements ActionListener {
 				
 				JOptionPane.showMessageDialog(mainPanel, "Invalid server information, unable to connect.");
 			}
-			
 		}
 	};
 	
 	ActionListener cancelButtonListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			
+			clearTextFields();
 			setVisible(false);
-			
 		}
 	};
 	
 	ItemListener rememberServerListener = new ItemListener() {
-
 		@Override
 		public void itemStateChanged(ItemEvent e) {
 			if(e.getStateChange() == ItemEvent.SELECTED) {

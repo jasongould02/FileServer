@@ -11,6 +11,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Base64;
 
+import jgould.fs.java.main.client.remote.FSRemoteFile;
+import jgould.fs.java.main.client.remote.FSRemoteFileTreeListener;
+import jgould.fs.java.main.client.remote.FSRemoteFileTreeUtil;
 import jgould.fs.java.main.util.FSConstants;
 import jgould.fs.java.main.util.FSUtil;
 import jgould.fs.java.main.util.FSWorkspace;
@@ -28,50 +31,10 @@ public class Client implements Runnable {
 	private Thread thread = null;
 	private boolean running = true;
 	
-	private ArrayList<FSRemoteFileTreeListener> fsRemoteFileTreeListeners = new ArrayList<FSRemoteFileTreeListener>();
-	
-	/*public static void main(String[] args) {
-		try {
-			FSWorkspace w = new FSWorkspace();
-			w.setWorkspace("workspace/");
-			Client c = new Client("127.0.0.1", 80, 5000, w);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}*/
-	
-	public Client() {
-		//this.start();
-	}
-	
-	public Client(String serverIP, int portNumber, int timeout) throws IOException {
-		//socket.connect(new InetSocketAddress(serverIP, portNumber), timeout);
-		this.connectToServer(serverIP, portNumber, timeout);
-		System.out.println("connection made");
+	private FSRemoteFileTreeListener fsRemoteFileTreeListener = null;
 		
-		//this.start();
-	}
+	public Client() {}
 	
-	/**
-	 * Creates a client instance and connects to given server IP at selected port with specified timeout. Sets the workspace to the absolute path given.
-	 * 
-	 * @param serverIP server IP address
-	 * @param portNumber port number to connect to 
-	 * @param timeout socket timeout
-	 * @param pathToWorkspace absolute path to workspace
-	 * @throws IOException
-	 */
-	public Client(String serverIP, int portNumber, int timeout, String pathToWorkspace) throws IOException, Exception {
-		this.connectToServer(serverIP, portNumber, timeout); // starts thread
-		this.workspace = new FSWorkspace(pathToWorkspace);
-	}
-	
-	private Client(String serverIP, int portNumber, int timeout, FSWorkspace workspace) throws IOException {
-		socket = new Socket();
-		this.connectToServer(serverIP, portNumber, timeout); // starts thread
-		this.workspace = workspace; 
-	}
-
 	protected void disconnect() {
 		if (socket != null) {
 			try {
@@ -141,12 +104,13 @@ public class Client implements Runnable {
 		}
 	}
 	
-	protected void sendDirectoryListingRequest() throws IOException {
+	public void sendDirectoryListingRequest() throws IOException {
 		write(FSConstants.DIRECTORY_LIST_REQUEST);
 	}
 	
 	private void parseCommand(String input) throws IOException {
 		System.out.println("received command:" + input);
+		boolean workspaceChange = true;
 		if(input.startsWith(FSConstants.FILE)) {
 			String[] split = input.split(FSConstants.DELIMITER);
 			if(split.length != 5) {
@@ -181,18 +145,21 @@ public class Client implements Runnable {
 			this.remotePathList.clear();
 			remotePathList.addAll(listing);
 			this.setRemoteFileTree(FSRemoteFileTreeUtil.constructRemoteFileTree(listing));
-		} 
-		for(FSRemoteFileTreeListener l : fsRemoteFileTreeListeners) {
-			l.remoteFileTreeChange();
+		} else {
+			System.out.println("Received non tree changing command");
+			workspaceChange = false;
+		}
+		
+		// Allows the client itself to immediately refresh the FSRemoteFileTrees after receiving changes
+		if(fsRemoteFileTreeListener != null && workspaceChange == true) {
+			fsRemoteFileTreeListener.workspaceChanged();
 		}
 	}
 	
 	protected void sendDirectory(File file, final String originalDestination, String destination) throws IOException {
 		for(File f : file.listFiles()) {
 			if(f.isDirectory()) {
-				//System.out.println("now sending to new folder:" + destination + ":" + f.getName());
 				write(FSConstants.FOLDER + ":" + destination + ":" + FSUtil.checkDirectoryEnding(f.getName()));
-				//System.out.println("moving to:"+destination+f.getName());
 				sendDirectory(f, originalDestination, destination + File.separator + f.getName());
 			} else {
 				sendFile(f, destination);
@@ -215,20 +182,15 @@ public class Client implements Runnable {
 				reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			}
 			
-			// Send server requests here until client GUI is implemented
-			//sendFileRequest("server_workspace/image - Copy (2).png", "image - Copy (2).png",  "workspace/test/");
-			
-			//sendFileRequest("server_workspace/testfolder/", "",  "workspace/temp/test/");
 			this.sendDirectoryListingRequest();
 						
-			while((input = reader.readLine()) != null) { // Not very good for large files (AFAIK >~ 4 MB)
+			while((input = reader.readLine()) != null) { // TODO: Change to batches/buffer 
 				if(writer == null && !socket.isClosed()) {
 					writer = new OutputStreamWriter(socket.getOutputStream());
 				}
 				if(reader == null && !socket.isClosed()) {
 					reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 				}
-				//System.out.println("Data received:" + input);
 				parseCommand(input);
 			}
 			writer.flush();
@@ -295,7 +257,7 @@ public class Client implements Runnable {
 		return remotePathList;
 	}
 	
-	public void addFSRemoteFileTreeListener(FSRemoteFileTreeListener ls) {
-		this.fsRemoteFileTreeListeners.add(ls);
+	public void setFSRemoteFileTreeListener(FSRemoteFileTreeListener ls) {
+		this.fsRemoteFileTreeListener = ls;
 	}
 }

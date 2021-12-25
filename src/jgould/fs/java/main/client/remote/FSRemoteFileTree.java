@@ -1,4 +1,4 @@
-package jgould.fs.java.main.client;
+package jgould.fs.java.main.client.remote;
 
 import java.awt.event.FocusListener;
 import java.awt.event.MouseListener;
@@ -93,8 +93,6 @@ public class FSRemoteFileTree {
     		tree = createJTree(tree, pathList, rootNode, treeModel);
     	}
     	tree.setRowHeight(25);
-    	//createPopupMenu();
-    	//tree.setComponentPopupMenu(popupMenu);
     }
     
     private DefaultMutableTreeNode generateTreeNode(FSRemoteFile rootFile, DefaultMutableTreeNode parent) {
@@ -136,7 +134,7 @@ public class FSRemoteFileTree {
 	}
 	
 	// Use FSRemoteFileTreeUtil.constructRemoteFileTree(ArrayList<String> paths) to construct a tree of FSRemoteFile objects, then tree structure will then be placed into DefaultMutableTreeNodes and into the JTree
-	protected void refreshTreeModel(FSRemoteFile rootFile) {
+	public void refreshTreeModel(FSRemoteFile rootFile) {
 		DefaultTreeModel model = ((DefaultTreeModel) getTree().getModel());
 		
 		if(model == null) {

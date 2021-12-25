@@ -41,7 +41,6 @@ public class FSWorkspace {
 		}
 	}
 	
-	
 	public void renameFile(String sourcePath, String sourceName, String targetName, StandardCopyOption copyOption) throws IOException {
 		String originalPath = null; // The sourcePath without the sourceName attached to the end of the String
 		String actualName = null; // only changed from null if the String targetName contains File.separator chars (it is a new path)
@@ -130,10 +129,6 @@ public class FSWorkspace {
 		
 		File temp = new File(getAbsolutePath() + source);
 		File dest = new File(getAbsolutePath() + destination);
-		
-		// DEBUG
-		//System.out.println("Does " + temp.getCanonicalPath() + " exists: " + temp.exists() + " (" + temp.getAbsolutePath() + ")");
-		//System.out.println("Does " + dest.getCanonicalPath() + " exists: " + temp.exists()+ " (" + dest.getAbsolutePath() + ")");
 		
 		if(!dest.isDirectory() || !dest.exists()) {
 			dest.mkdir();

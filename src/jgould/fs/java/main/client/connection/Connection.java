@@ -1,4 +1,4 @@
-package jgould.fs.java.main.client;
+package jgould.fs.java.main.client.connection;
 
 public class Connection {
 
@@ -28,6 +28,11 @@ public class Connection {
 	
 	public int getServerTimeout() {
 		return serverTimeout;
+	}
+	
+	@Override
+	public String toString() {
+		return getServerName();
 	}
 	
 }

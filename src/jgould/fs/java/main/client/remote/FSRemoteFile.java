@@ -1,4 +1,4 @@
-package jgould.fs.java.main.client;
+package jgould.fs.java.main.client.remote;
 
 import java.util.ArrayList;
 
@@ -8,28 +8,16 @@ public class FSRemoteFile {
 	private String filename;
 	private ArrayList<FSRemoteFile> children;
 	
-	// Can be checked if directory by seeing filename. directories won't have file extension
+	// Notes:
+	// Can be checked if it is a directory by seeing filename. directories won't have file extension or tailing File.separator
 	// private boolean isDir = false;
 	
 	public FSRemoteFile() {
 		children = new ArrayList<FSRemoteFile>();
 	}
 	
-	//public FSRemoteFile(String filename, String remotePath, FSRemoteFile... files) {
-	public FSRemoteFile(String filename, FSRemoteFile... files) {
-		this.filename = filename;
-		//this.remotePath = remotePath;
-		
-		children = new ArrayList<FSRemoteFile>();
-		for(FSRemoteFile r : files) {
-			this.children.add(r);
-		}
-	}
-	
-	//public FSRemoteFile(String filename, String remotePath) {
 	public FSRemoteFile(String filename) {
 		this.filename = filename;
-		//this.remotePath = remotePath;
 		this.children = new ArrayList<FSRemoteFile>();
 	}
 	

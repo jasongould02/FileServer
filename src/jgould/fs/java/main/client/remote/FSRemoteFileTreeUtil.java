@@ -1,4 +1,4 @@
-package jgould.fs.java.main.client;
+package jgould.fs.java.main.client.remote;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,11 +48,6 @@ public class FSRemoteFileTreeUtil {
 		for(String path : temp) {
 			String[] split = path.split("\\\\");
 			
-			// DEBUG
-			/*for(String s : split) {
-				System.out.print(s + ",");
-			} System.out.print("\n");*/
-			
 			int splitLength = split.length;
 			FSRemoteFile currNode = rootFile;
 			
@@ -79,21 +74,13 @@ public class FSRemoteFileTreeUtil {
 			}
 			currNode.setPath(path);
 		}
-		//System.out.println("finished constructing new tree.");
 		return rootFile;
 	}
 	
-	public static void printFSRemoteFileTree(FSRemoteFile root, int depth) {
-		if(root != null) {
-			if(root.hasChildren()) {
-				for(FSRemoteFile c : root.getChildren()) {
-					for(int i=0; i < depth; i++) {
-						System.out.print(" ");
-					}
-					System.out.println(c.getName() + " > " + c.getPath());
-					printFSRemoteFileTree(c, depth + 1);
-				}
-			}
+	public static void printRemoteFile(FSRemoteFile f) {
+		System.out.println("Name:[" + f.getName() + "] Path:[" + f.getPath() + "]");
+		for(FSRemoteFile c : f.getChildren()) {
+			printRemoteFile(c);
 		}
 	}
 	

@@ -1,4 +1,4 @@
-package jgould.fs.java.main.client;
+package jgould.fs.java.main.client.connection;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -26,14 +26,7 @@ public class ConnectionHistory {
 	private final static String PREVIOUS_SERVER_NAME = "PREVIOUS_SERVER_NAME"; // This is the field inside the savedConnections.json file that contains the serverName of the previous connected server
 	private static String recent_connection_name = "";
 	
-	private ConnectionHistory() {
-		//JSONObject connections = loadJSONFile("savedConnections.json"); // loads the file and places it into the 'connections' JSONObject (represents the JSON file)
-		//addAllConnections(connections); // Call after ConnectionHistory#loadJSONFile(String filePath) in order to load into HashMap
-		
-		/*for(String key : connectionsMap.keySet()) { // Print out list of keys and server names
-			System.out.println("Key:" + key + "\tServer Name:" + connectionsMap.get(key).getServerName() + "\tServer IP:" + connectionsMap.get(key).getServerIP());
-		}*/
-	}
+	private ConnectionHistory() {}
 	
 	/**
 	 * Will load the file at the given file path (if it exists) and also return the JSONObject (the contents of the file as a JSONObject)
@@ -56,7 +49,6 @@ public class ConnectionHistory {
 			System.out.println("Invalid JSON file.");
 			return null;
 		}
-
 	}
 	
 	/**
@@ -147,8 +139,6 @@ public class ConnectionHistory {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 		root.write(writer);
 		writer.flush(); // necessary since JSONObject.write() will not flush the writer stream
-		
-		//return root;
 	}
 	
 	/**
@@ -160,11 +150,34 @@ public class ConnectionHistory {
 	}
 	
 	/**
-	 * 
 	 * @return the value of the {@link PREVIOUS_SERVER_NAME} key. It can return null, "" (an empty string), or a valid name 
 	 */
 	public static String getMostRecentConnectionName() {
 		return recent_connection_name;
 	}
 	
+	/**
+	 * @return number of saved connections in the {@link ConnectionHistory#connectionsMap}
+	 */
+	public static int getConnectionCount() {
+		return connectionsMap.size();
+	}
+	
+	/**
+	 * @return an array of available {@link Connection}s
+	 */
+	public static Connection[] getAvailableConnections() {
+		Connection[] connections = null;
+		if(connectionsMap.size() >= 1) {
+			connections = new Connection[connectionsMap.size()];
+			int position = 0;
+			for(String key : connectionsMap.keySet()) {
+				connections[position] = connectionsMap.get(key);
+				position += 1;
+			}
+			return connections;
+		} else {
+			return null;
+		}
+	}
 }
