@@ -141,6 +141,10 @@ public class Worker implements Runnable {
 			String input;
 			while((input = reader.readLine()) != null) {
 				System.out.println("[" + workerID + "] Data received:" + input);
+				if(input.startsWith(FSConstants.END_CONNECTION)) {
+					socket.close();
+					continue;
+				}
 				parseCommand(input);
 			}
 			writer.flush();

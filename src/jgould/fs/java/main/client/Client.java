@@ -35,7 +35,15 @@ public class Client implements Runnable {
 		
 	public Client() {}
 	
-	protected void disconnect() {
+	// This method solves the problem of unable to perform actions on a server after reconnecting
+	// (There was a bug where reconnected to a server would not allow the client to receive any information from the server, 
+	// even though the server itself could send and receive data, the client would never be able to process it)
+	// use this method instead of Client#disconnect();
+	protected void sendDisconnectMessage() {
+		write(FSConstants.END_CONNECTION);
+	}
+	
+	private void disconnect() {
 		if (socket != null) {
 			try {
 				socket.close();
@@ -91,7 +99,7 @@ public class Client implements Runnable {
 	 * This method flushes after the String has been written
 	 * @param data
 	 */
-	private void write(String data) {
+	protected void write(String data) {
 		if(writer != null && socket.isConnected()) {
 			try {
 				writer.write(data + "\r\n");
@@ -172,7 +180,7 @@ public class Client implements Runnable {
 		String string_data = Base64.getEncoder().encodeToString(data);
 		write(FSConstants.FILE + ":" + destination + ":" + src.getName() + ":" + data.length + ":" + string_data);
 	}
-
+	
 	@Override
 	public void run() {
 		String input;
@@ -183,15 +191,30 @@ public class Client implements Runnable {
 			}
 			
 			this.sendDirectoryListingRequest();
-						
-			while((input = reader.readLine()) != null) { // TODO: Change to batches/buffer 
-				if(writer == null && !socket.isClosed()) {
-					writer = new OutputStreamWriter(socket.getOutputStream());
+			
+			while(running) { // As long as the client is running keep checking if the socket is connected or not closed
+				if(socket != null && !socket.isClosed() && socket.isConnected()) {
+					//writer = new OutputStreamWriter(socket.getOutputStream());
+					//reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+					
+					// start
+					while((input = reader.readLine()) != null) { // TODO: Change to batches/buffer 
+						if(writer == null && !socket.isClosed()) {
+							System.out.println("Reconnected writer");
+							writer = new OutputStreamWriter(socket.getOutputStream());
+						}
+						if(reader == null && !socket.isClosed()) {
+							System.out.println("odd reader reconnect");
+							reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+						}
+						System.out.println("Input:" + input);
+						if(input.startsWith(FSConstants.END_CONNECTION)) {
+							this.disconnect();
+							break;
+						}
+						parseCommand(input);
+					}
 				}
-				if(reader == null && !socket.isClosed()) {
-					reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-				}
-				parseCommand(input);
 			}
 			writer.flush();
 			writer.close();

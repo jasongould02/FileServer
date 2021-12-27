@@ -329,7 +329,8 @@ public class ClientView {
 	private ActionListener disconnectActionListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			client.disconnect();
+			client.sendDisconnectMessage();
+			//client.disconnect();
 			serverTree.refreshTreeModel(null);
 		}
 	};

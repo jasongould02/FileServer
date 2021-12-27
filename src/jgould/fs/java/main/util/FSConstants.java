@@ -19,6 +19,8 @@ public class FSConstants {
 	public static final String RENAME = "RENAME";
 	public static final String MOVE = "MOVE";
 	
+	public static final String END_CONNECTION = "END_CONNECTION";
+	
 	public static final String FILE = "FILE";
 	public static final String FOLDER = "FOLDER";
 	

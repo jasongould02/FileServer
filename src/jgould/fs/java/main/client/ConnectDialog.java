@@ -22,8 +22,9 @@ import javax.swing.JTextField;
 
 import jgould.fs.java.main.client.connection.Connection;
 import jgould.fs.java.main.client.connection.ConnectionHistory;
+import jgould.fs.java.main.util.FSConstants;
 
-public class ConnectDialog extends JDialog implements ActionListener {
+public class ConnectDialog extends JDialog {
 
 	private JPanel mainPanel;
 	//private GridLayout layout;
@@ -54,7 +55,6 @@ public class ConnectDialog extends JDialog implements ActionListener {
 				System.out.println("ConnectDialog unable to cast item state change event source");
 			}
 		}
-		
 	};
 	
 	private JComboBox<Connection> createDropDownMenu(JComboBox<Connection> dropDownMenu) {
@@ -164,12 +164,6 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		return c;
 	}
 	
-	
-	@Override
-	public void actionPerformed(ActionEvent e) {
-		System.out.println(e.getActionCommand());
-	}
-	
 	public String[] getConnectDialogInput() {
 		return new String[] {serverNameField.getText(), serverIPField.getText(), serverPortField.getText(), serverTimeoutField.getText()};
 	}
@@ -200,7 +194,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		this.cancelButton.addActionListener(al);
 	}
 	
-	ActionListener connectButtonListener = new ActionListener() {
+	private ActionListener connectButtonListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			
@@ -216,6 +210,12 @@ public class ConnectDialog extends JDialog implements ActionListener {
 			
 			int portNumber = Integer.parseInt(serverPort);
 			int timeout = Integer.parseInt(serverTimeout);
+			if(cv.getClient().isConnected()) {
+				//cv.getClient().write(FSConstants.END_CONNECTION);
+				cv.getClient().sendDisconnectMessage();
+				//cv.getClient().disconnect();
+			}
+			
 			System.out.println("attempting connections");
 			cv.getClient().connectToServer(serverIP, portNumber, timeout);
 			System.out.println("finished attempting");
@@ -225,7 +225,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 				e1.printStackTrace();
 			}
 			
-			if (cv.getClient().isConnected()) {
+			if (cv.getClient().isConnected()) { // Exit out
 				System.out.println("client connected");
 				if(rememberServer == true) {
 					ConnectionHistory.addConnection(new Connection(serverName, serverIP, portNumber, timeout));
@@ -233,7 +233,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 				}
 				setVisible(false);
 				cv.refreshTrees();
-			} else {
+			} else { // Connection failed, alerts user of failed connection, then still shows the connection dialog
 				System.out.println("CLIENT IS NOT CONNECTED");
 				System.out.println("name: [" + serverName + "]" + "\tlength: [" + serverName.length() + "]");
 				System.out.println("serverip [" + serverIP + "]" + "\tlength: [" + serverIP.length() + "]");
@@ -245,7 +245,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		}
 	};
 	
-	ActionListener cancelButtonListener = new ActionListener() {
+	private ActionListener cancelButtonListener = new ActionListener() {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			clearTextFields();
@@ -253,7 +253,7 @@ public class ConnectDialog extends JDialog implements ActionListener {
 		}
 	};
 	
-	ItemListener rememberServerListener = new ItemListener() {
+	private ItemListener rememberServerListener = new ItemListener() {
 		@Override
 		public void itemStateChanged(ItemEvent e) {
 			if(e.getStateChange() == ItemEvent.SELECTED) {
