@@ -140,7 +140,7 @@ public class Worker implements Runnable {
 		try {
 			String input;
 			while((input = reader.readLine()) != null) {
-				System.out.println("Data received:" + input);
+				System.out.println("[" + workerID + "] Data received:" + input);
 				parseCommand(input);
 			}
 			writer.flush();
