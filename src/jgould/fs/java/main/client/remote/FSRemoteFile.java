@@ -2,9 +2,11 @@ package jgould.fs.java.main.client.remote;
 
 import java.util.ArrayList;
 
+import jgould.fs.java.main.util.FSUtil;
+
 public class FSRemoteFile {
 
-	private String remotePath;
+	private String remotePath; // remotePath includes the filename at the end of the path
 	private String filename;
 	private ArrayList<FSRemoteFile> children;
 	
@@ -57,6 +59,14 @@ public class FSRemoteFile {
 			}
 		}
 		return null;
+	}
+	
+	public boolean isFolder() {
+		return FSUtil.getExtension(this.getName()) == null ? true : false;
+	}
+	
+	public boolean isFile() {
+		return FSUtil.getExtension(this.getName()) != null ? true : false; 
 	}
 	
 	public String getPath() {

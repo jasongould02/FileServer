@@ -124,7 +124,7 @@ public class FSUtil {
 			return null;
 		}
 		if(file.exists() && file.isFile()) {
-			return Files.readAllBytes(file.toPath()); //TODO: change for larger files that cant fit in reasonably sized byte array
+			return Files.readAllBytes(file.toPath()); // TODO: change for larger files that cant fit in reasonably sized byte array
 		} else {
 			return null;
 		}

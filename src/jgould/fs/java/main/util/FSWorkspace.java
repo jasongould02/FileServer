@@ -179,6 +179,7 @@ public class FSWorkspace {
 		}
 	}
 
+	@Deprecated
 	private String getListing(File root) {
 		if(root.isFile()) {
 			return "";

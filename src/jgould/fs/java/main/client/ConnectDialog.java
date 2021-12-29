@@ -146,6 +146,7 @@ public class ConnectDialog extends JDialog {
 		mainPanel.add(rememberServerCheckBox, c);
 		
 		connectButton.addActionListener(connectButtonListener);
+		cancelButton.addActionListener(cancelButtonListener);
 		
 		this.add(mainPanel);
 		mainPanel.setMinimumSize(new Dimension(275, 275));
@@ -186,13 +187,13 @@ public class ConnectDialog extends JDialog {
 		serverTimeoutField.setText("");
 	}
 	
-	public void setConnectButtonListener(ActionListener al) {
+	/*private void setConnectButtonListener(ActionListener al) {
 		this.connectButton.addActionListener(al);
 	}
 	
-	public void setCancelButtonListener(ActionListener al) {
+	private void setCancelButtonListener(ActionListener al) {
 		this.cancelButton.addActionListener(al);
-	}
+	}*/
 	
 	private ActionListener connectButtonListener = new ActionListener() {
 		@Override
