@@ -521,8 +521,7 @@ public class ClientView {
 				updateCenterPanelButtons();
 				if(SwingUtilities.isRightMouseButton(e)) {
 					clientTree.getTree().clearSelection();
-					clientJTreeSelection = null;
-					updateCenterPanelButtons();
+					clientTreeSelection = null;
 				}
 					
 			} else { 
@@ -532,7 +531,6 @@ public class ClientView {
 			}
 		}
 	};
-	
 	private MouseAdapter serverTreeMouseListener = new MouseAdapter() {
 		@Override
 		public void mouseReleased(MouseEvent e) {
@@ -566,6 +564,7 @@ public class ClientView {
 		@Override
 	    public void windowClosing(WindowEvent e) {
 			try {
+				getClient().sendDisconnectMessage();
 				ConnectionHistory.saveConnections("savedConnections.json");
 			} catch (JSONException | IOException e1) {
 				e1.printStackTrace();
