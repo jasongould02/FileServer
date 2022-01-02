@@ -139,6 +139,7 @@ public class FSWorkspace {
 		return temp;
 	}
 	
+	@Deprecated
 	public File moveFile(File source, File destination, StandardCopyOption copyOption) throws IOException, Exception {
 		checkWorkspace();
 		if(source.exists() && destination.exists()) {

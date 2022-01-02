@@ -6,8 +6,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -32,7 +30,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.json.JSONException;
 
+import jgould.fs.java.main.client.connection.Connection;
 import jgould.fs.java.main.client.connection.ConnectionHistory;
+import jgould.fs.java.main.client.connection.ConnectionMenuItem;
 import jgould.fs.java.main.client.remote.FSRemoteFile;
 import jgould.fs.java.main.client.remote.FSRemoteFileTree;
 import jgould.fs.java.main.client.remote.FSRemoteFileTreeListener;
@@ -54,15 +54,18 @@ public class ClientView {
 	// Top menu bar 
 	private JMenuBar menuBar;
 	private JMenu fileMenu;
+	private JMenu connectToMenu; // Quick Connect drop down list
 	private JMenuItem connectItem;
 	private JMenuItem disconnectItem;
 	
 	// Client File Tree
-    private FSRemoteFile clientJTreeSelection = null;
     private FSRemoteFileTree clientTree = null;
+    private FSRemoteFile clientTreeSelection = null;
+    private DefaultMutableTreeNode clientTreeSelectionNode = null;
     // Server File Tree
-    private FSRemoteFile serverJTreeSelection = null;
     private FSRemoteFileTree serverTree = null;
+    private FSRemoteFile serverTreeSelection = null;
+    private DefaultMutableTreeNode serverTreeSelectionNode = null;
     
     private JPanel centerPanel;
     private JButton filePushButton;
@@ -86,6 +89,35 @@ public class ClientView {
 		}
 	}
 	
+	private ConnectionMenuItem[] createQuickConnect() {
+		ConnectionMenuItem[] itemList = new ConnectionMenuItem[ConnectionHistory.getConnectionCount()];
+		Connection[] connectionList = ConnectionHistory.getAvailableConnections();
+		for(int i = 0; i < ConnectionHistory.getConnectionCount(); i++) {
+			itemList[i] = new ConnectionMenuItem(connectionList[i]);
+			itemList[i].addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					if(e.getSource() instanceof ConnectionMenuItem) {
+						ConnectionMenuItem c = (ConnectionMenuItem) e.getSource();
+						//client.write(FSConstants.END_CONNECTION);
+						client.sendDisconnectMessage();
+						//client.disconnect();
+						client.connectToServer(c.getConnection().getServerIP(), c.getConnection().getServerPort(), c.getConnection().getServerTimeout());
+						if(client.isConnected()) {
+							try {
+								client.sendDirectoryListingRequest();
+								clearTreeSelections();
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+					}
+				}
+			});
+		}
+		return itemList;
+	}
+	
 	private void createJMenu(JFrame parent) {
 		menuBar = new JMenuBar();
 		fileMenu = new JMenu("File");
@@ -96,7 +128,13 @@ public class ClientView {
 		disconnectItem = new JMenuItem("Disconnect");
 		disconnectItem.addActionListener(disconnectActionListener);
 		
+		connectToMenu = new JMenu("Connect To");
+		for(JMenuItem i : createQuickConnect()) {
+			connectToMenu.add(i);
+		}
+		
 		fileMenu.add(connectItem);
+		fileMenu.add(connectToMenu);
 		fileMenu.add(disconnectItem);
 		menuBar.add(fileMenu);
 		parent.setJMenuBar(menuBar);
@@ -255,16 +293,16 @@ public class ClientView {
 	}
 	
 	private void updateCenterPanelButtons() {
-		if(clientJTreeSelection != null && serverJTreeSelection != null) { // selection on both Server and Client JTrees
+		if(clientTreeSelection != null && serverTreeSelection != null) { // selection on both Server and Client JTrees
 			filePushButton.setEnabled(true);
 			filePullButton.setEnabled(true);
 			fileDeleteButton.setEnabled(false);
 		} else {
-			if(clientJTreeSelection != null && serverJTreeSelection == null) { // selection only on Client JTree
+			if(clientTreeSelection != null && serverTreeSelection == null) { // selection only on Client JTree
 				filePushButton.setEnabled(true);
 				filePullButton.setEnabled(false);
 				fileDeleteButton.setEnabled(true);
-			} else if(serverJTreeSelection != null && clientJTreeSelection == null) { // selection only on Server JTree
+			} else if(serverTreeSelection != null && clientTreeSelection == null) { // selection only on Server JTree
 				filePushButton.setEnabled(false);
 				filePullButton.setEnabled(true);
 				fileDeleteButton.setEnabled(true);
@@ -284,8 +322,8 @@ public class ClientView {
 		this.clientTree.getTree().clearSelection();
 		this.serverTree.getTree().clearSelection();
 		
-		clientJTreeSelection = null;
-		serverJTreeSelection = null;
+		clientTreeSelection = null;
+		serverTreeSelection = null;
 		
 		updateCenterPanelButtons();
 	}
@@ -340,29 +378,31 @@ public class ClientView {
 		public void actionPerformed(ActionEvent e) {
 			try {
 				String destination;
-				if(FSUtil.getExtension(clientJTreeSelection.getName()) == null) { // sending a folder
-					if(serverJTreeSelection == null || serverJTreeSelection.getPath().isEmpty()) {
-						destination = clientJTreeSelection.getName(); // server_workspace_rootfolder + separator + clientjtreeselection name
+				
+				if(FSUtil.getExtension(clientTreeSelection.getName()) == null) { // sending a folder
+					if(serverTreeSelection == null || serverTreeSelection.getPath().isEmpty()) { // NOTE: File push check if has destination
+						destination = clientTreeSelection.getName(); // server_workspace_rootfolder + separator + clientTreeSelection name
+						System.out.println("file push with no destination:[" + destination + "]");
 					} else {
-						if(FSUtil.getExtension(serverJTreeSelection.getName()) == null) { // sending directory to a folder
-							destination = serverJTreeSelection.getPath() + File.separator + clientJTreeSelection.getName();
+						if(FSUtil.getExtension(serverTreeSelection.getName()) == null) { // sending directory to a folder
+							destination = serverTreeSelection.getPath() + File.separator + clientTreeSelection.getName();
 						} else { // sending file to parent folder of a file
-							destination = FSUtil.getParent(serverJTreeSelection.getPath()) + File.separator + clientJTreeSelection.getName();
+							destination = FSUtil.getParent(serverTreeSelection.getPath()) + File.separator + clientTreeSelection.getName();
 						}
 					}
-					client.sendDirectory(new File(clientJTreeSelection.getPath()), destination, destination);
+					client.sendDirectory(new File(clientTreeSelection.getPath()), destination, destination);
 					
 				} else { // sending a regular file
-					if(serverJTreeSelection == null || serverJTreeSelection.getPath().isEmpty()) {
+					if(serverTreeSelection == null || serverTreeSelection.getPath().isEmpty()) {
 						destination = "";
 					} else {
-						if(FSUtil.getExtension(serverJTreeSelection.getName()) == null) { // sending file to a folder
-							destination = serverJTreeSelection.getPath();
+						if(FSUtil.getExtension(serverTreeSelection.getName()) == null) { // sending file to a folder
+							destination = serverTreeSelection.getPath();
 						} else { // sending file to parent folder of a file
-							destination = FSUtil.getParent(serverJTreeSelection.getPath());
+							destination = FSUtil.getParent(serverTreeSelection.getPath());
 						}
 					}
-					client.sendFile(new File(clientJTreeSelection.getPath()), destination);
+					client.sendFile(new File(clientTreeSelection.getPath()), destination);
 				}
 				
 				client.sendDirectoryListingRequest();
@@ -379,20 +419,20 @@ public class ClientView {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
-				if(serverJTreeSelection != null) {
-					if(clientJTreeSelection == null) {
+				if(serverTreeSelection != null) {
+					if(clientTreeSelection == null) {
 						System.out.println("no client selection");
-						client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.checkDirectoryEnding(client.getFSWorkspace().getWorkspace().getPath()));
+						client.sendFileRequest(serverTreeSelection.getPath(), serverTreeSelection.getName(), FSUtil.checkDirectoryEnding(client.getFSWorkspace().getWorkspace().getPath()));
 					} else {
-						if(clientJTreeSelection.getPath() != null) {
-							if(FSUtil.getExtension(clientJTreeSelection.getName()) == null) { // sending file to a folder
-								client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), clientJTreeSelection.getPath());
+						if(clientTreeSelection.getPath() != null) {
+							if(FSUtil.getExtension(clientTreeSelection.getName()) == null) { // sending file to a folder
+								client.sendFileRequest(serverTreeSelection.getPath(), serverTreeSelection.getName(), clientTreeSelection.getPath());
 							} else {
-								client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.getParent(clientJTreeSelection.getPath()));
+								client.sendFileRequest(serverTreeSelection.getPath(), serverTreeSelection.getName(), FSUtil.getParent(clientTreeSelection.getPath()));
 							}
 						} else {
 							System.out.println("Error: Sending file to Client's workspace directory."); // This should only occur when the clientJTreeSelection is the root folder.
-							client.sendFileRequest(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), FSUtil.checkDirectoryEnding(client.getFSWorkspace().getWorkspace().getPath())); 
+							client.sendFileRequest(serverTreeSelection.getPath(), serverTreeSelection.getName(), FSUtil.checkDirectoryEnding(client.getFSWorkspace().getWorkspace().getPath())); 
 						}
 					}
 					
@@ -411,12 +451,12 @@ public class ClientView {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			try {
-				if(clientJTreeSelection == null && serverJTreeSelection != null) { // Send remove file command to server
-					client.sendFileRemove(serverJTreeSelection.getPath(), serverJTreeSelection.getName());
+				if(clientTreeSelection == null && serverTreeSelection != null) { // Send remove file command to server
+					client.sendFileRemove(serverTreeSelection.getPath(), serverTreeSelection.getName());
 					client.sendDirectoryListingRequest();
 					serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
-				} else if(clientJTreeSelection != null && serverJTreeSelection == null) { // delete local file
-					client.getFSWorkspace().deleteFile(clientJTreeSelection.getPath(), StandardCopyOption.REPLACE_EXISTING);
+				} else if(clientTreeSelection != null && serverTreeSelection == null) { // delete local file
+					client.getFSWorkspace().deleteFile(clientTreeSelection.getPath(), StandardCopyOption.REPLACE_EXISTING);
 					clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
 				}
 				refreshTrees();
@@ -433,14 +473,14 @@ public class ClientView {
 			try {
 				System.out.println("\nRename source:" + e.getSource() + "\n");
 				String newFileName;
-				if(clientJTreeSelection == null && serverJTreeSelection != null) { // Send rename file command to server
-					newFileName = JOptionPane.showInputDialog(clientTree.getPopupMenu(), "Enter new name:\n", serverJTreeSelection.getName());
-					client.sendFileRename(serverJTreeSelection.getPath(), serverJTreeSelection.getName(), newFileName);
+				if(clientTreeSelection == null && serverTreeSelection != null) { // Send rename file command to server
+					newFileName = JOptionPane.showInputDialog(clientTree.getPopupMenu(), "Enter new name:\n", serverTreeSelection.getName());
+					client.sendFileRename(serverTreeSelection.getPath(), serverTreeSelection.getName(), newFileName);
 					client.sendDirectoryListingRequest();
 					serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
-				} else if(clientJTreeSelection != null && serverJTreeSelection == null) { // rename local file
-					newFileName = JOptionPane.showInputDialog(serverTree.getPopupMenu(), "Enter new name:\n", clientJTreeSelection.getName());
-					client.getFSWorkspace().renameFile(clientJTreeSelection.getPath(), clientJTreeSelection.getName(), newFileName, StandardCopyOption.REPLACE_EXISTING);
+				} else if(clientTreeSelection != null && serverTreeSelection == null) { // rename local file
+					newFileName = JOptionPane.showInputDialog(serverTree.getPopupMenu(), "Enter new name:\n", clientTreeSelection.getName());
+					client.getFSWorkspace().renameFile(clientTreeSelection.getPath(), clientTreeSelection.getName(), newFileName, StandardCopyOption.REPLACE_EXISTING);
 					clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSRemoteFileTreeUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
 				}
 				refreshTrees();
@@ -457,6 +497,7 @@ public class ClientView {
 			System.out.println("called");
 			refreshTrees();
 		}
+
 	};
 	
 	private MouseAdapter clientTreeMouseListener = new MouseAdapter() {
@@ -465,33 +506,27 @@ public class ClientView {
 			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
 				DefaultMutableTreeNode treeNode = ((DefaultMutableTreeNode) clientTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent());
 				FSRemoteFile file = ((FSRemoteFile) treeNode.getUserObject());
-				
-				if(file != null && clientJTreeSelection != null && SwingUtilities.isLeftMouseButton(e)) {
-					if(file.getPath().equals(clientJTreeSelection.getPath())) {
+				clientTreeSelectionNode = treeNode;
+				if(file != null && clientTreeSelection != null && SwingUtilities.isLeftMouseButton(e)) {
+					if(file.getPath().equals(clientTreeSelection.getPath())) {
 						System.out.println("ClientTree MouseListener: A node is already selecting, deselecting node");
 						System.out.println("node is already selected, deselecting");
-						clientJTreeSelection = null;
+						clientTreeSelection = null;
 						clientTree.getTree().clearSelection();
-						//clearTreeSelections();
 						updateCenterPanelButtons();
 						return;
 					}
 				}
-				
+				clientTreeSelection = file;
+				updateCenterPanelButtons();
 				if(SwingUtilities.isRightMouseButton(e)) {
-					System.out.println("right click detected on clientTree");
-					clearTreeSelections();
 					clientTree.getTree().clearSelection();
 					clientJTreeSelection = null;
 					updateCenterPanelButtons();
 				}
 					
-				if(file != null) {
-					clientJTreeSelection = file;
-				}
-				updateCenterPanelButtons();
 			} else { 
-				System.out.println("invalid selection");
+				System.out.println("invalid client tree selection");
 				clearTreeSelections();
 				updateCenterPanelButtons();
 			}
@@ -501,20 +536,22 @@ public class ClientView {
 	private MouseAdapter serverTreeMouseListener = new MouseAdapter() {
 		@Override
 		public void mouseReleased(MouseEvent e) {
-			if(clientTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
+			//updateCenterPanelButtons(); // TODO: Remove this line
+			if(serverTree.getTree().getPathForLocation(e.getX(), e.getY()) != null) {
 				FSRemoteFile file = (FSRemoteFile) ((DefaultMutableTreeNode) serverTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent()).getUserObject();
-				if(file != null && serverJTreeSelection != null) {
-					if(file.getPath().equals(serverJTreeSelection.getPath())) {
-						serverJTreeSelection = null;
+				serverTreeSelectionNode = (DefaultMutableTreeNode) serverTree.getTree().getPathForLocation(e.getX(), e.getY()).getLastPathComponent();
+				System.out.println("servernode is now:" + ((FSRemoteFile)serverTreeSelectionNode.getUserObject()).getPath() );
+				
+				if(file != null && serverTreeSelection != null) {
+					if(file.getPath().equals(serverTreeSelection.getPath())) {
+						serverTreeSelection = null;
 						serverTree.getTree().clearSelection();
 						//clearTreeSelections();
 						updateCenterPanelButtons();
 						return;
 					}
 				}
-				if(file != null) {
-					serverJTreeSelection = file;
-				}
+				serverTreeSelection = file;
 				updateCenterPanelButtons();
 			} else {
 				System.out.println("invalid selection on server tree");
