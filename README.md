@@ -3,7 +3,7 @@
 This project was created to act as a LAN file transfer program to move files from my main computer to my storage computer.
 Still a work in progress.
 
-##Maven
+## Maven
 
 This project is dependent on the the following:
 
@@ -19,7 +19,7 @@ Once you are in the FileServer folder, clean the maven project:
 
 `mvn clean`
 
-###Building the Modules
+### Building the Modules
 To build each module:
 
 Commons Module:
