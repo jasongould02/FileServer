@@ -34,6 +34,11 @@ public class Server {
 		this.port = port;
 		server = new ServerSocket(this.port);
 		
+		File temp = new File("server_workspace\\");
+		if(!temp.exists()) {
+			temp.mkdirs();
+		}
+		
 		workspace = new FSWorkspace();
 		workspace.setWorkspace("server_workspace\\");
 		//workspace.refreshWorkspace();

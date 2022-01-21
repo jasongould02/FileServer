@@ -40,6 +40,7 @@ import main.java.jgould.fs.client.remote.FSRemoteFileTreeUtil;
 import main.java.jgould.fs.commons.FSConstants;
 import main.java.jgould.fs.commons.FSRemoteFile;
 import main.java.jgould.fs.commons.FSUtil;
+import main.java.jgould.fs.commons.FSWorkspaceListener;
 
 public class ClientView {
 
@@ -144,7 +145,8 @@ public class ClientView {
 	
 	public ClientView(Client client) {
 		client.setFSWorkspace("workspace/");
-		client.setConflictListener(remoteFileConflictListener);
+		client.setRemoteWorkspaceListener(remoteFileConflictListener);
+		client.getFSWorkspace().setWorkspaceListener(remoteFileConflictListener);
 		this.client = client;
 		//File f = new File("trash");
 		FSConstants.setTrashBin("trash" + File.separator);
@@ -473,11 +475,24 @@ public class ClientView {
 				String newFileName;
 				if(clientTreeSelection == null && serverTreeSelection != null) { // Send rename file command to server
 					newFileName = JOptionPane.showInputDialog(clientTree.getPopupMenu(), "Enter new name:\n", serverTreeSelection.getName());
+					if(serverTreeSelection.getName().equals(newFileName) || newFileName == null) { // keeping same name
+						System.out.println("rename server file keeping same name");
+						client.sendDirectoryListingRequest();
+						refreshTrees();
+						clearTreeSelections();
+						return;
+					}
 					client.sendFileRename(serverTreeSelection.getPath(), serverTreeSelection.getName(), newFileName);
 					client.sendDirectoryListingRequest();
 					serverTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(client.getRemotePathList()));
 				} else if(clientTreeSelection != null && serverTreeSelection == null) { // rename local file
 					newFileName = JOptionPane.showInputDialog(serverTree.getPopupMenu(), "Enter new name:\n", clientTreeSelection.getName());
+					if(clientTreeSelection.getName().equals(newFileName) || newFileName == null) {
+						System.out.println("renaming client file keeping same name");
+						refreshTrees();
+						clearTreeSelections();
+						return;
+					}
 					client.getFSWorkspace().renameFile(clientTreeSelection.getPath(), clientTreeSelection.getName(), newFileName, StandardCopyOption.REPLACE_EXISTING);
 					clientTree.refreshTreeModel(FSRemoteFileTreeUtil.constructRemoteFileTree(FSUtil.searchDirectory(client.getFSWorkspace().getWorkspace())));
 				}
@@ -567,7 +582,7 @@ public class ClientView {
 	    }
 	};
 	
-	private FileConflictListener remoteFileConflictListener = new FileConflictListener() {
+	private FSWorkspaceListener remoteFileConflictListener = new FSWorkspaceListener() {
 
 		@Override
 		public int promptFolderConflict(boolean localWorkspace, FSRemoteFile originalFolder, String newFolderPath, String newFolderName) {
@@ -607,11 +622,11 @@ public class ClientView {
 		}
 
 		@Override
-		public boolean conflictCheck(boolean isOriginalTreeLocal, FSRemoteFile originalTree, FSRemoteFile sourceFile) {
-			return this.conflictCheck(isOriginalTreeLocal, originalTree, sourceFile.getPath());
+		public boolean conflictCheck(boolean isOriginalTreeLocal, FSRemoteFile sourceFile) {
+			return this.conflictCheck(isOriginalTreeLocal, sourceFile.getPath());
 		}
 		
-		public boolean conflictCheck(boolean isOriginalTreeLocal, FSRemoteFile originalTree, String sourcePath) {
+		public boolean conflictCheck(boolean isOriginalTreeLocal, String sourcePath) {
 			FSRemoteFile oTree = isOriginalTreeLocal ? this.getLocalFileTree() : this.getRemoteFileTree();
 			if((oTree.checkForPath(oTree, sourcePath)) != null) {
 				return true;

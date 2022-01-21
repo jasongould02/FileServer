@@ -1,15 +1,18 @@
 package main.java.jgould.fs.commons;
 
-public interface FSWorkspaceListener {
+public interface FSWorkspaceListener {	
+	/**
+	 * Shows JOptionPane to get a new file name,
+	 * returns null if the name is empty, no name entered or if the rename was cancelled
+	 * */
+	public String promptNewName(String filePath, String fileName);
+	public int promptFolderConflict(boolean localWorkspace, FSRemoteFile originalFolder, String newFolderPath, String newFolderName);
+	public int promptFileConflict(boolean localWorkspace, FSRemoteFile originalFile, String newArrivalPath, String newArrivalName);
 
-	//public static final int CLIENT_ORIGIN = 0;
-	//public static final int SERVER_ORIGIN = 1;
+	// Original tree is essentially the destination and is the file where sourceFile will be moving to / becoming
+	public boolean conflictCheck(boolean isOriginalTreeLocal, FSRemoteFile sourceFile);
+	public boolean conflictCheck(boolean isOriginalTreeLocal, String sourcePath);
 	
-	
-	// Meant to take path and file name, and check for a conflict for files of same parent folder and name
-	// Needs to check client and server
-	// Best to check server file conflicts before sending the file to the server (use the Clients remote file list)
-	//public String[] checkForNameConflict(boolean isSourceLocal, String sourcePath, String sourceName, String invalidPath, String invalidName);
-	
-	
+	public FSRemoteFile getRemoteFileTree();
+	public FSRemoteFile getLocalFileTree();
 }

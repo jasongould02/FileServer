@@ -17,16 +17,17 @@ import main.java.jgould.fs.commons.FSConstants;
 import main.java.jgould.fs.commons.FSRemoteFile;
 import main.java.jgould.fs.commons.FSUtil;
 import main.java.jgould.fs.commons.FSWorkspace;
+import main.java.jgould.fs.commons.FSWorkspaceListener;
 
 public class Client implements Runnable {
-	private FileConflictListener remoteFileConflictListener = null;
+	private FSWorkspaceListener remoteWorkspaceListener = null;
 	
-	public void setConflictListener(FileConflictListener remoteFileConflictListener) {
-		this.remoteFileConflictListener = remoteFileConflictListener;
+	public void setRemoteWorkspaceListener(FSWorkspaceListener remoteWorkspaceListener) {
+		this.remoteWorkspaceListener = remoteWorkspaceListener;
 	}
 	
-	public FileConflictListener getConflictListener() {
-		return this.remoteFileConflictListener;
+	public FSWorkspaceListener getConflictListener() {
+		return this.remoteWorkspaceListener;
 	}
 	
 	private Socket socket;
@@ -43,9 +44,7 @@ public class Client implements Runnable {
 	private FSRemoteFileTreeListener fsRemoteFileTreeListener = null;
 		
 	public Client() {}
-	
-	
-	
+
 	private void disconnect() {
 		if (socket != null) {
 			try {
@@ -194,7 +193,6 @@ public class Client implements Runnable {
 	protected void write(String data) throws IOException {
 		if(data.contains(FSConstants.DELIMITER)) {
 			FSRemoteFile remoteTree = getConflictListener().getRemoteFileTree();
-			FSRemoteFile localTree = getConflictListener().getLocalFileTree();
 			
 			final String message_type = data.substring(0, data.indexOf(FSConstants.DELIMITER));
 			System.out.println("message_type:" + message_type);
@@ -215,7 +213,7 @@ public class Client implements Runnable {
 						System.out.println("overwriting a root file");
 					}
 					
-					boolean conflict = getConflictListener().conflictCheck(false, remoteTree, finalPath);
+					boolean conflict = getConflictListener().conflictCheck(false, finalPath);
 					FSRemoteFile destinationFile = remoteTree.checkForPath(remoteTree, finalPath);
 					System.out.println("RemoteTree.Name:"+remoteTree.getName() + "\t path:" + remoteTree.getPath());
 					System.out.println("conflict" + conflict + "\tdestinationFile" + destinationFile);
@@ -238,7 +236,7 @@ public class Client implements Runnable {
 										System.out.println("file renamed to itself_rename canceled");
 										return;
 									}
-									newNameConflict = getConflictListener().conflictCheck(false, remoteTree, destination + newName);
+									newNameConflict = getConflictListener().conflictCheck(false, destination + newName);
 									System.out.println("newNameConflict is now" + newNameConflict);
 									if(!newNameConflict) {
 										System.out.println("sending new file name");
@@ -259,7 +257,7 @@ public class Client implements Runnable {
 					String destination = split[1];
 					String folderName = split[2];
 					String finalPath = FSUtil.checkDirectoryEnding(destination) + folderName + File.separator;
-					boolean conflict = getConflictListener().conflictCheck(false, remoteTree, finalPath);
+					boolean conflict = getConflictListener().conflictCheck(false, finalPath);
 					FSRemoteFile destinationFile = remoteTree.checkForPath(remoteTree, finalPath);
 					
 					if(conflict && destinationFile != null) { // theres a remoteFolder already at the destination
@@ -273,7 +271,7 @@ public class Client implements Runnable {
 					String sourceName = split[2];
 					String targetName = split[3];
 					String newPath = FSUtil.getParent(sourcePath) + targetName;
-					boolean conflict = getConflictListener().conflictCheck(false, remoteTree, newPath);
+					boolean conflict = getConflictListener().conflictCheck(false, newPath);
 					FSRemoteFile destinationFile = remoteTree.checkForPath(remoteTree, newPath);
 					FSRemoteFile sourceFile = remoteTree.checkForPath(remoteTree, sourcePath);
 					if(sourceFile == null) {
@@ -292,7 +290,7 @@ public class Client implements Runnable {
 								System.out.println("file renamed to itself_rename canceled");
 								return;
 							}
-							newNameConflict = getConflictListener().conflictCheck(false, remoteTree, FSUtil.getParent(sourcePath) + newName);
+							newNameConflict = getConflictListener().conflictCheck(false, FSUtil.getParent(sourcePath) + newName);
 							System.out.println("newNameConflict is now" + newNameConflict);
 							if(!newNameConflict) {
 								System.out.println("sending new file name");
@@ -304,7 +302,6 @@ public class Client implements Runnable {
 				}
 			}
 		}
-		
 		
 		if(writer != null && socket.isConnected()) {
 				writer.write(data + "\r\n");
@@ -416,6 +413,10 @@ public class Client implements Runnable {
 	
 	public void setFSWorkspace(String pathToWorkspace) {
 		try {
+			File f = new File(pathToWorkspace);
+			if(!f.exists()) {
+				f.mkdirs();
+			}
 			this.workspace = new FSWorkspace(pathToWorkspace);
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -7,9 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-
-import main.java.jgould.fs.commons.FSWorkspaceListener;
 
 /**
  * NOTE: Workspace uses canonical paths as the arguments for the methods when passing String objects for paths.
@@ -61,40 +58,25 @@ public class FSWorkspace {
 			originalPath = sourcePath.substring(0, sourcePath.lastIndexOf(File.separator));
 		}
 		
-		if(targetName.contains(File.separator)) { // contains new path
+		String finalDestination = "";
+		if(targetName.contains(File.separator)) { // contains new path (if original file was "workspace\test.png" then targetName should be in a format similar to: "workspace\new\folder\path\targetName"
 			actualName = targetName.substring(targetName.lastIndexOf(File.separator));
-			
 			String targetPath = targetName.substring(0, targetName.lastIndexOf(File.separator)); // This is the the added folders (removes the new file name) the user wishes to create when renaming the source file
 			
 			// Create the new folders required to place the renamed file in
 			addedTargetPath = originalPath + File.separator + targetPath;
 			File pathToNewTarget = new File(addedTargetPath);
 			pathToNewTarget.mkdirs();
-			String finalDestination = addedTargetPath + File.separator + actualName;
-			/*if(workspaceListener != null) {
-				String output = workspaceListener.nameConflict(finalDestination, actualName);
-				System.out.println("FSWORKSPACE_Output:[" + output + "]");
-			}
-			Files.move(Paths.get(sourcePath), Paths.get(finalDestination), copyOption);*/
-			files_move(sourcePath, finalDestination, copyOption);
+			finalDestination = addedTargetPath + File.separator + actualName;
 		} else { // targetName doesn't contain any new folders
-			files_move(sourcePath, FSUtil.getParent(sourcePath) + targetName, copyOption);
-			/*Path source = Paths.get(sourcePath); 
-			Path target = Paths.get(FSUtil.getParent(sourcePath) + File.separator + targetName);
-			if(workspaceListener != null) {
-				System.out.println("FSWORKSPACE_Output:[" + workspaceListener.nameConflict(target.toString(), targetName) + "]");
-			}
-			Files.move(source, target, copyOption);*/
+			finalDestination = FSUtil.getParent(sourcePath) + targetName;
 		}
+		files_move(sourcePath, finalDestination, copyOption);
 	}
 	
 	private void mergeFolders() {
-		/* NOTE: Check comment below for merging folders
-		 * for ever file in a folder,
-		 * 	check if mergedFile_i exists in folder, if not add, if it exists ask for overwrite or cancel specific file move, or cancel the rest of the move
-		 * 
-		 * 
-		 * */
+		// TODO: complete merge folders function
+		//  			for every file in a folder,	check if mergedFile_i exists in folder, if not add, if it exists ask for overwrite or cancel specific file move, or cancel the rest of the move
 	}
 	
 	private Path files_move(String sourcePath, String destinationPath, StandardCopyOption option) throws IOException {
@@ -104,12 +86,37 @@ public class FSWorkspace {
 		} else {
 			System.out.println("files_move used");
 		}
-		System.out.println("Checking for destination:" + this.containsFile(destinationPath));
-		System.out.println("Checking for source:" + this.containsFile(sourcePath));
-		//if(workspaceListener != null) {
-			//String[] output = workspaceListener.checkForNameConflict(true, sourcePath, FSUtil.getFileName(sourcePath), destinationPath, FSUtil.getFileName(destinationPath));
-			//System.out.println("workspaceListener:[" + output + "]");
-		//}
+		if(this.workspaceListener != null) {
+			//boolean hasConflict = workspaceListener.conflictCheck(true, destinationPath);
+			//FSRemoteFile destinationFile = workspaceListener.getLocalFileTree().checkForPath(workspaceListener.getLocalFileTree(), destinationPath);
+			File destinationFile = new File(destinationPath);
+			if(destinationFile.exists()) {
+				String targetName = destinationFile.getName();
+				File sourceFile = new File(sourcePath);
+				//FSRemoteFile sourceFile = workspaceListener.getLocalFileTree().checkForPath(workspaceListener.getLocalFileTree(), sourcePath);
+				String newName;
+				boolean newNameConflict = true;
+				
+				do {
+					newName = workspaceListener.promptNewName(sourceFile.getPath(), sourceFile.getName());
+					if(sourceFile.getName().equals(newName) || newName == null) { // cancel
+						System.out.println("retaining original file name");
+						destinationPath = sourcePath;
+						break;
+					} else if(newName.equals(targetName)) { // overwrite
+						System.out.println("New name set to targetName");
+						break;
+					}
+					String newNamePath = FSUtil.getParent(destinationPath) + newName;
+					File newNameFile = new File(newNamePath);
+					if(!newNameFile.exists()) { // the new file name is still a conflict
+						newNameConflict = false;
+						destinationPath = newNamePath;
+						break;
+					}
+				} while(newNameConflict == true); 
+			}
+		}
 		Path src = Paths.get(sourcePath);
 		Path dest = Paths.get(destinationPath);
 		return Files.move(src, dest, option);
@@ -123,12 +130,7 @@ public class FSWorkspace {
 	 */
 	public File deleteFile(String source, StandardCopyOption copyOption) throws IOException, Exception { 
 		checkWorkspace();
-		
 		File sourceFile = new File(source);
-		
-		// DEBUG
-		//System.out.println("Does " + sourceFile.getCanonicalPath() + " exists: " + sourceFile.exists() + " (" + sourceFile.getAbsolutePath() + ")");
-		
 		File tempFile = new File(FSConstants.getTrashBin().getPath() + File.separator + sourceFile.getName());
 		int i = 0;
 		if(sourceFile.isFile()) {
@@ -150,9 +152,6 @@ public class FSWorkspace {
 			files_move(sourceFile.getPath(), tempFile.getPath(), copyOption);
 			sourceFile.delete();
 		}
-		/*if(sourceFile.exists()) { // Check if the file still exists
-			throw new IOException("Failed to delete:" + sourceFile.getAbsolutePath());
-		}*/
 		return sourceFile;
 	}
 	
@@ -210,10 +209,36 @@ public class FSWorkspace {
 	 */
 	public File addFile(String filename, byte[] data, String destination, StandardOpenOption option) throws IOException {
 		File dest = null;
-		dest = new File(FSUtil.checkDirectoryEnding(destination));
+		dest = FSUtil.getExtension(destination) != null ? new File(FSUtil.getParent(destination)) : new File(destination);
 		dest.mkdirs(); // create any missing directories
+		System.out.println("add File destination:" + destination);
+		String destinationPath = FSUtil.checkDirectoryEnding(destination) + filename;
+		if(workspaceListener != null) {
+			File addedFile = new File(destinationPath);
+			if(addedFile.exists()) {
+				String newName;
+				boolean newNameConflict = true;
+				do {
+					newName = workspaceListener.promptNewName(addedFile.getPath(), addedFile.getName());
+					String newNamePath = FSUtil.getParent(destinationPath) + newName;
+					if(newName == null) { // cancel adding the file
+						System.out.println("retaining original file, cancelling file add");
+						destinationPath = addedFile.getPath();
+						return null;
+					} else if (newName.equals(addedFile.getName()))  { // overwrite the original file that was there
+						break;
+					}
+					File newNameFile = new File(newNamePath);
+					if(!newNameFile.exists()) { // the new file name is still a conflict
+						newNameConflict = false;
+						destinationPath = newNamePath;
+						break;
+					}
+				} while(newNameConflict == true); 
+			}
+		}
 		
-		Files.write(Paths.get(FSUtil.checkDirectoryEnding(destination) + filename), data, option);
+		Files.write(Paths.get(destinationPath), data, option);
 		
 		return dest;
 	}
@@ -223,6 +248,7 @@ public class FSWorkspace {
 	 * */
 	public File addDirectory(String folderName, String destination) {
 		File dest = new File(FSUtil.checkDirectoryEnding(destination) + folderName);
+		System.out.println("add Directory destination:" + destination);
 		//System.out.println("add dir" + destination + "\t" + "dest:" + dest.getPath() + "\tfoldername:" + folderName);
 		dest.mkdirs();
 		
@@ -238,40 +264,6 @@ public class FSWorkspace {
 		} else {
 			return true;
 		}
-	}
-
-	@Deprecated
-	private String getListing(File root) {
-		if(root.isFile()) {
-			return "";
-		}
-		String listing = "";
-		String rootPath = root.getPath();
-		rootPath = FSUtil.checkDirectoryEnding(rootPath);
-		
-		listing += rootPath + ":";
-		int i = 0;
-		File[] list = root.listFiles();
-		if(list != null) {
-			for(i = 0; i < list.length; i++) {
-				if(list[i] == null) { // TODO: fix
-					continue;
-					//System.out.println("its null!");
-				}
-				listing += list[i].getName();
-				if(list[i].isDirectory()) {
-					//System.out.println("dir:" + list[i].getName());
-					listing += File.separator;
-				}
-				if(i == (list.length-1)) {
-					//System.out.println("last index");
-					listing += ";";
-				} else {
-					listing += ":";
-				}
-			}
-		}
-		return listing;
 	}
 	
 	/**
@@ -314,33 +306,10 @@ public class FSWorkspace {
 		}
 	}
 	
-	/**
-	 * Prints out list of files in the current workspace
-	 * 
-	 * @return
-	 */
-	@Deprecated
-	public String listContents() {
-		File root = this.getWorkspace();
-		String output = "";
-		
-		output += getListing(root);
-		for(File f : root.listFiles()) {
-			output += getListing(f);
-		}
-		
-		return output;
-	}
-	
 	public String getAbsolutePath() {
 		return ws.getAbsolutePath() + File.separator;
 	}
-	
-	@Deprecated
-	public File[] listWorkspace() {
-		return getWorkspace().listFiles(); 
-	}
-	
+		
 	public File getWorkspace() {
 		return ws;
 	}
