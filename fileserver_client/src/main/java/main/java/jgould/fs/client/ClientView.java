@@ -11,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.StandardCopyOption;
 
@@ -41,6 +42,7 @@ import main.java.jgould.fs.commons.FSConstants;
 import main.java.jgould.fs.commons.FSRemoteFile;
 import main.java.jgould.fs.commons.FSUtil;
 import main.java.jgould.fs.commons.FSWorkspaceListener;
+import main.java.jgould.fs.commons.log.Logger;
 
 public class ClientView {
 
@@ -80,13 +82,13 @@ public class ClientView {
 	private Client client;
 	
 	public static void main(String[] args) {
-		try {
+			try {
+				Logger.initLogger(1024);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			Client c = new Client();
-			ConnectionHistory.addAllConnections(ConnectionHistory.loadJSONFile("savedConnections.json"));
 			ClientView clientView = new ClientView(c);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 	
 	private ConnectionMenuItem[] createQuickConnect() {
@@ -104,7 +106,6 @@ public class ClientView {
 						} catch (IOException e2) {
 							e2.printStackTrace();
 						}
-						//client.disconnect();
 						client.connectToServer(c.getConnection().getServerIP(), c.getConnection().getServerPort(), c.getConnection().getServerTimeout());
 						if(client.isConnected()) {
 							try {
@@ -150,6 +151,12 @@ public class ClientView {
 		this.client = client;
 		//File f = new File("trash");
 		FSConstants.setTrashBin("trash" + File.separator);
+		
+		try {
+			ConnectionHistory.addAllConnections(ConnectionHistory.loadJSONFile("savedConnections.json"));
+		} catch (FileNotFoundException | JSONException e1) {
+			e1.printStackTrace();
+		}
 		
 		frame = new JFrame(TITLE);
 		frame.setSize(width, height);
